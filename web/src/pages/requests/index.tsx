@@ -56,86 +56,81 @@ export function RequestsPage() {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex flex-1 overflow-hidden">
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {isLoading && requests.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center">
-              <Loader2 className="w-8 h-8 animate-spin text-accent" />
-            </div>
-          ) : requests.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-text-muted">
-              <Activity size={48} className="mb-md opacity-50" />
-              <p className="text-body">No request logs yet</p>
-              <p className="text-caption mt-xs">Requests will appear here when you start using the proxy</p>
-            </div>
-          ) : (
+      {/* Pagination - Always visible */}
+      <div className="flex items-center justify-between px-md py-sm border-b border-border bg-surface-secondary/50 flex-shrink-0">
+        <span className="text-caption text-text-secondary">
+          {total > 0 ? (
             <>
-              {/* Pagination */}
-              <div className="flex items-center justify-between px-md py-sm border-b border-border bg-surface-secondary/50">
-                <span className="text-caption text-text-secondary">
-                  {total > 0 ? (
-                    <>
-                      {page * PAGE_SIZE + 1}-{Math.min((page + 1) * PAGE_SIZE, total)} of {total}
-                    </>
-                  ) : (
-                    '0 items'
-                  )}
-                </span>
-                <div className="flex items-center gap-xs">
-                  <button
-                    onClick={() => setPage((p) => Math.max(0, p - 1))}
-                    disabled={page === 0}
-                    className="p-xs rounded hover:bg-surface-hover text-text-secondary disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                  <span className="text-caption text-text-secondary min-w-[60px] text-center">
-                    {totalPages > 0 ? `${page + 1} / ${totalPages}` : '0 / 0'}
-                  </span>
-                  <button
-                    onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                    disabled={page >= totalPages - 1}
-                    className="p-xs rounded hover:bg-surface-hover text-text-secondary disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Table */}
-              <div className="flex-1 overflow-auto">
-                <table className="w-full table-fixed border-collapse">
-                  <thead className="bg-surface-secondary sticky top-0 z-10">
-                    <tr>
-                      <th className="w-[90px] text-left text-caption font-medium text-text-secondary p-md border-b border-border">Time</th>
-                      <th className="w-[90px] text-left text-caption font-medium text-text-secondary p-md border-b border-border">Status</th>
-                      <th className="w-[50px] text-left text-caption font-medium text-text-secondary p-md border-b border-border">Code</th>
-                      <th className="w-[80px] text-left text-caption font-medium text-text-secondary p-md border-b border-border">Client</th>
-                      <th className="w-[180px] text-left text-caption font-medium text-text-secondary p-md border-b border-border">Model</th>
-                      <th className="w-[80px] text-right text-caption font-medium text-text-secondary p-md border-b border-border">Duration</th>
-                      <th className="w-[70px] text-right text-caption font-medium text-text-secondary p-md border-b border-border">Cost</th>
-                      <th className="w-[60px] text-center text-caption font-medium text-text-secondary p-md border-b border-border" title="Attempts">Att.</th>
-                      <th className="w-[60px] text-right text-caption font-medium text-text-secondary p-md border-b border-border" title="Input Tokens">In</th>
-                      <th className="w-[60px] text-right text-caption font-medium text-text-secondary p-md border-b border-border" title="Output Tokens">Out</th>
-                      <th className="w-[60px] text-right text-caption font-medium text-text-secondary p-md border-b border-border" title="Cache Read">CacheR</th>
-                      <th className="w-[60px] text-right text-caption font-medium text-text-secondary p-md border-b border-border" title="Cache Write">CacheW</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {requests.map((req) => (
-                      <LogRow
-                        key={req.id}
-                        request={req}
-                        onClick={() => navigate(`/requests/${req.id}`)}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              {page * PAGE_SIZE + 1}-{Math.min((page + 1) * PAGE_SIZE, total)} of {total}
             </>
+          ) : (
+            '0 items'
           )}
+        </span>
+        <div className="flex items-center gap-xs">
+          <button
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="p-xs rounded hover:bg-surface-hover text-text-secondary disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <span className="text-caption text-text-secondary min-w-[60px] text-center">
+            {totalPages > 0 ? `${page + 1} / ${totalPages}` : '0 / 0'}
+          </span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={page >= totalPages - 1}
+            className="p-xs rounded hover:bg-surface-hover text-text-secondary disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <ChevronRight size={16} />
+          </button>
         </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-hidden">
+        {isLoading && requests.length === 0 ? (
+          <div className="h-full flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-accent" />
+          </div>
+        ) : requests.length === 0 ? (
+          <div className="h-full flex flex-col items-center justify-center text-text-muted">
+            <Activity size={48} className="mb-md opacity-50" />
+            <p className="text-body">No request logs yet</p>
+            <p className="text-caption mt-xs">Requests will appear here when you start using the proxy</p>
+          </div>
+        ) : (
+          <div className="h-full overflow-auto">
+            <table className="w-full table-fixed border-collapse">
+              <thead className="bg-surface-secondary sticky top-0 z-10">
+                <tr>
+                  <th className="w-[90px] text-left text-caption font-medium text-text-secondary p-md border-b border-border">Time</th>
+                  <th className="w-[90px] text-left text-caption font-medium text-text-secondary p-md border-b border-border">Status</th>
+                  <th className="w-[50px] text-left text-caption font-medium text-text-secondary p-md border-b border-border">Code</th>
+                  <th className="w-[80px] text-left text-caption font-medium text-text-secondary p-md border-b border-border">Client</th>
+                  <th className="w-[180px] text-left text-caption font-medium text-text-secondary p-md border-b border-border">Model</th>
+                  <th className="w-[80px] text-right text-caption font-medium text-text-secondary p-md border-b border-border">Duration</th>
+                  <th className="w-[70px] text-right text-caption font-medium text-text-secondary p-md border-b border-border">Cost</th>
+                  <th className="w-[60px] text-center text-caption font-medium text-text-secondary p-md border-b border-border" title="Attempts">Att.</th>
+                  <th className="w-[60px] text-right text-caption font-medium text-text-secondary p-md border-b border-border" title="Input Tokens">In</th>
+                  <th className="w-[60px] text-right text-caption font-medium text-text-secondary p-md border-b border-border" title="Output Tokens">Out</th>
+                  <th className="w-[60px] text-right text-caption font-medium text-text-secondary p-md border-b border-border" title="Cache Read">CacheR</th>
+                  <th className="w-[60px] text-right text-caption font-medium text-text-secondary p-md border-b border-border" title="Cache Write">CacheW</th>
+                </tr>
+              </thead>
+              <tbody>
+                {requests.map((req) => (
+                  <LogRow
+                    key={req.id}
+                    request={req}
+                    onClick={() => navigate(`/requests/${req.id}`)}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
