@@ -227,6 +227,15 @@ export class HttpTransport implements Transport {
     await this.client.delete(`/settings/${key}`);
   }
 
+  // ===== Logs API =====
+
+  async getLogs(limit = 100): Promise<{ lines: string[]; count: number }> {
+    const { data } = await this.client.get<{ lines: string[]; count: number }>('/logs', {
+      params: { limit },
+    });
+    return data ?? { lines: [], count: 0 };
+  }
+
   // ===== WebSocket 订阅 =====
 
   subscribe<T = unknown>(eventType: WSMessageType, callback: EventCallback<T>): UnsubscribeFn {

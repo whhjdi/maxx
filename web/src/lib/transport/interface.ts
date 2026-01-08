@@ -78,6 +78,9 @@ export interface Transport {
   updateSetting(key: string, value: string): Promise<{ key: string; value: string }>;
   deleteSetting(key: string): Promise<void>;
 
+  // ===== Logs API =====
+  getLogs(limit?: number): Promise<{ lines: string[]; count: number }>;
+
   // ===== 实时订阅 =====
   subscribe<T = unknown>(eventType: WSMessageType, callback: EventCallback<T>): UnsubscribeFn;
 

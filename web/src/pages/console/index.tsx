@@ -1,52 +1,47 @@
 import { useState, useEffect, useRef } from 'react';
-import { Terminal, Trash2, Pause, Play, ArrowDown } from 'lucide-react';
-import { useStreamingRequests } from '@/hooks/use-streaming';
-import { ClientIcon, getClientName } from '@/components/icons/client-icons';
-import type { ProxyRequest } from '@/lib/transport';
+import { Terminal, Trash2, Pause, Play, ArrowDown, Loader2 } from 'lucide-react';
+import { getTransport } from '@/lib/transport';
 
-interface LogEntry {
-  id: string;
-  timestamp: Date;
-  type: 'request' | 'response' | 'error' | 'info';
-  clientType?: string;
-  message: string;
-  requestId?: string;
-  model?: string;
-  status?: string;
-}
+const transport = getTransport();
 
 export function ConsolePage() {
-  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [logs, setLogs] = useState<string[]>([]);
   const [isPaused, setIsPaused] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const logsEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { requests } = useStreamingRequests();
-  const processedIds = useRef(new Set<string>());
+  const pausedRef = useRef(isPaused);
 
-  // Process streaming requests into log entries
+  // Keep pausedRef in sync
   useEffect(() => {
-    if (isPaused) return;
+    pausedRef.current = isPaused;
+  }, [isPaused]);
 
-    requests.forEach((req: ProxyRequest) => {
-      const key = `${req.requestID}-${req.status}`;
-      if (processedIds.current.has(key)) return;
-      processedIds.current.add(key);
+  // Load historical logs on mount
+  useEffect(() => {
+    const loadHistoricalLogs = async () => {
+      try {
+        const { lines } = await transport.getLogs(500);
+        setLogs(lines);
+      } catch (error) {
+        console.error('Failed to load historical logs:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadHistoricalLogs();
+  }, []);
 
-      const entry: LogEntry = {
-        id: key,
-        timestamp: new Date(req.startTime),
-        type: req.status === 'FAILED' ? 'error' : req.status === 'COMPLETED' ? 'response' : 'request',
-        clientType: req.clientType,
-        message: formatLogMessage(req),
-        requestId: req.requestID,
-        model: req.requestModel,
-        status: req.status,
-      };
-
-      setLogs((prev) => [...prev.slice(-499), entry]);
+  // Subscribe to log_message events
+  useEffect(() => {
+    const unsubscribe = transport.subscribe<string>('log_message', (message) => {
+      if (pausedRef.current) return;
+      setLogs((prev) => [...prev.slice(-999), message]);
     });
-  }, [requests, isPaused]);
+
+    return () => unsubscribe();
+  }, []);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -64,7 +59,6 @@ export function ConsolePage() {
 
   const clearLogs = () => {
     setLogs([]);
-    processedIds.current.clear();
   };
 
   const scrollToBottom = () => {
@@ -86,12 +80,16 @@ export function ConsolePage() {
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto bg-[#1a1a1a] font-mono text-sm"
       >
-        {logs.length === 0 ? (
+        {isLoading ? (
+          <LoadingState />
+        ) : logs.length === 0 ? (
           <EmptyState />
         ) : (
-          <div className="p-4 space-y-1">
-            {logs.map((log) => (
-              <LogLine key={log.id} log={log} />
+          <div className="p-4">
+            {logs.map((log, index) => (
+              <div key={index} className="text-gray-300 py-0.5 hover:bg-white/5">
+                {log}
+              </div>
             ))}
             <div ref={logsEndRef} />
           </div>
@@ -129,7 +127,7 @@ function Header({
         </div>
         <div>
           <h1 className="text-headline font-semibold text-text-primary">Console</h1>
-          <p className="text-caption text-text-secondary">{logCount} entries</p>
+          <p className="text-caption text-text-secondary">{logCount} lines</p>
         </div>
       </div>
       <div className="flex items-center gap-2">
@@ -156,52 +154,19 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center h-full text-text-muted">
       <Terminal size={48} className="mb-4 opacity-30" />
-      <p>Waiting for requests...</p>
-      <p className="text-xs mt-1">Logs will appear here in real-time</p>
+      <p>Waiting for logs...</p>
+      <p className="text-xs mt-1">Server logs will appear here in real-time</p>
     </div>
   );
 }
 
-function LogLine({ log }: { log: LogEntry }) {
-  const timeStr = log.timestamp.toLocaleTimeString('en-US', { hour12: false });
-
-  const typeColors = {
-    request: 'text-blue-400',
-    response: 'text-emerald-400',
-    error: 'text-red-400',
-    info: 'text-text-muted',
-  };
-
+function LoadingState() {
   return (
-    <div className="flex items-start gap-3 py-1 hover:bg-white/5 px-2 -mx-2 rounded">
-      <span className="text-text-muted shrink-0">{timeStr}</span>
-      {log.clientType && <ClientIcon type={log.clientType as any} size={16} className="shrink-0 mt-0.5" />}
-      <span className={`shrink-0 uppercase text-xs font-medium ${typeColors[log.type]}`}>
-        [{log.status || log.type.toUpperCase()}]
-      </span>
-      <span className="text-gray-300 break-all">{log.message}</span>
+    <div className="flex flex-col items-center justify-center h-full text-text-muted">
+      <Loader2 size={48} className="mb-4 opacity-50 animate-spin" />
+      <p>Loading historical logs...</p>
     </div>
   );
-}
-
-function formatLogMessage(req: ProxyRequest): string {
-  const client = getClientName(req.clientType as any);
-  const model = req.requestModel || 'unknown';
-
-  switch (req.status) {
-    case 'PENDING':
-      return `${client} request started - model: ${model}`;
-    case 'IN_PROGRESS':
-      return `${client} streaming - model: ${model}`;
-    case 'COMPLETED':
-      const duration = req.duration ? `${(req.duration / 1e6).toFixed(0)}ms` : '-';
-      const tokens = req.inputTokenCount + req.outputTokenCount;
-      return `${client} completed - model: ${req.responseModel || model}, duration: ${duration}, tokens: ${tokens}`;
-    case 'FAILED':
-      return `${client} failed - model: ${model}, error: ${req.error || 'unknown'}`;
-    default:
-      return `${client} - model: ${model}`;
-  }
 }
 
 export default ConsolePage;

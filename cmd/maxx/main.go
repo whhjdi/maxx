@@ -86,6 +86,10 @@ func main() {
 	// Create WebSocket hub
 	wsHub := handler.NewWebSocketHub()
 
+	// Setup log output to broadcast via WebSocket
+	logWriter := handler.NewWebSocketLogWriter(wsHub, os.Stdout)
+	log.SetOutput(logWriter)
+
 	// Create executor
 	exec := executor.NewExecutor(r, proxyRequestRepo, attemptRepo, cachedRetryConfigRepo, wsHub)
 

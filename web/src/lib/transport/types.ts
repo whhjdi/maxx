@@ -167,7 +167,7 @@ export interface PaginationParams {
 
 // ===== WebSocket 消息 =====
 
-export type WSMessageType = 'proxy_request_update' | 'stats_update';
+export type WSMessageType = 'proxy_request_update' | 'stats_update' | 'log_message';
 
 export interface WSMessage<T = unknown> {
   type: WSMessageType;

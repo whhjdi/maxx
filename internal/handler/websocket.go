@@ -1,8 +1,13 @@
 package handler
 
 import (
+	"bufio"
+	"io"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/Bowl42/maxx-next/internal/domain"
@@ -88,4 +93,167 @@ func (h *WebSocketHub) BroadcastStats(stats interface{}) {
 		Type: "stats_update",
 		Data: stats,
 	}
+}
+
+// BroadcastLog sends a log message to all connected clients
+func (h *WebSocketHub) BroadcastLog(message string) {
+	h.broadcast <- WSMessage{
+		Type: "log_message",
+		Data: message,
+	}
+}
+
+// WebSocketLogWriter implements io.Writer to capture logs and broadcast via WebSocket
+type WebSocketLogWriter struct {
+	hub      *WebSocketHub
+	stdout   io.Writer
+	logFile  *os.File
+	filePath string
+}
+
+// getDefaultLogPath returns the default log path (~/.config/maxx/maxx.log)
+func getDefaultLogPath() string {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "maxx.log"
+	}
+	return filepath.Join(homeDir, ".config", "maxx", "maxx.log")
+}
+
+// NewWebSocketLogWriter creates a writer that broadcasts logs via WebSocket and writes to file
+func NewWebSocketLogWriter(hub *WebSocketHub, stdout io.Writer) *WebSocketLogWriter {
+	logPath := getDefaultLogPath()
+
+	// Ensure log directory exists
+	logDir := filepath.Dir(logPath)
+	if err := os.MkdirAll(logDir, 0755); err != nil {
+		log.Printf("Warning: Failed to create log directory: %v", err)
+	}
+
+	// Open log file in append mode
+	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		log.Printf("Warning: Failed to open log file: %v", err)
+	}
+
+	return &WebSocketLogWriter{
+		hub:      hub,
+		stdout:   stdout,
+		logFile:  logFile,
+		filePath: logPath,
+	}
+}
+
+// Write implements io.Writer
+func (w *WebSocketLogWriter) Write(p []byte) (n int, err error) {
+	// Write to stdout first
+	n, err = w.stdout.Write(p)
+	if err != nil {
+		return n, err
+	}
+
+	// Write to log file
+	if w.logFile != nil {
+		w.logFile.Write(p)
+	}
+
+	// Broadcast to WebSocket clients
+	msg := strings.TrimSpace(string(p))
+	if msg != "" {
+		w.hub.BroadcastLog(msg)
+	}
+
+	return n, nil
+}
+
+// ReadLastNLines reads the last n lines from the log file
+func ReadLastNLines(n int) ([]string, error) {
+	logPath := getDefaultLogPath()
+
+	file, err := os.Open(logPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []string{}, nil
+		}
+		return nil, err
+	}
+	defer file.Close()
+
+	// Get file info for size
+	stat, err := file.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	// For small files, read all lines
+	if stat.Size() < 1024*1024 { // Less than 1MB
+		var lines []string
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			lines = append(lines, scanner.Text())
+		}
+		if err := scanner.Err(); err != nil {
+			return nil, err
+		}
+
+		// Return last n lines
+		if len(lines) <= n {
+			return lines, nil
+		}
+		return lines[len(lines)-n:], nil
+	}
+
+	// For large files, seek from the end
+	// Read backwards in chunks to find enough newlines
+	chunkSize := int64(8192)
+	offset := stat.Size()
+	var chunks [][]byte
+
+	for offset > 0 && countNewlines(chunks) < n+1 {
+		readSize := chunkSize
+		if offset < chunkSize {
+			readSize = offset
+		}
+		offset -= readSize
+
+		chunk := make([]byte, readSize)
+		_, err := file.ReadAt(chunk, offset)
+		if err != nil && err != io.EOF {
+			return nil, err
+		}
+		chunks = append([][]byte{chunk}, chunks...)
+	}
+
+	// Combine chunks and split into lines
+	var allData []byte
+	for _, chunk := range chunks {
+		allData = append(allData, chunk...)
+	}
+
+	lines := strings.Split(string(allData), "\n")
+	// Filter empty lines
+	var nonEmptyLines []string
+	for _, line := range lines {
+		if strings.TrimSpace(line) != "" {
+			nonEmptyLines = append(nonEmptyLines, line)
+		}
+	}
+
+	// Return last n lines
+	if len(nonEmptyLines) <= n {
+		return nonEmptyLines, nil
+	}
+	return nonEmptyLines[len(nonEmptyLines)-n:], nil
+}
+
+func countNewlines(chunks [][]byte) int {
+	count := 0
+	for _, chunk := range chunks {
+		for _, b := range chunk {
+			if b == '\n' {
+				count++
+			}
+		}
+	}
+	return count
 }

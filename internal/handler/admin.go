@@ -84,6 +84,8 @@ func (h *AdminHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.handleSettings(w, r, parts)
 	case "proxy-status":
 		h.handleProxyStatus(w, r)
+	case "logs":
+		h.handleLogs(w, r)
 	default:
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
 	}
@@ -629,4 +631,36 @@ func writeJSON(w http.ResponseWriter, status int, data interface{}) {
 	if data != nil {
 		json.NewEncoder(w).Encode(data)
 	}
+}
+
+// Logs handler - read last N lines from log file
+func (h *AdminHandler) handleLogs(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
+		return
+	}
+
+	// Get limit from query params, default 100
+	limit := 100
+	if l := r.URL.Query().Get("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
+			limit = parsed
+		}
+	}
+
+	// Cap at 1000 to prevent excessive memory usage
+	if limit > 1000 {
+		limit = 1000
+	}
+
+	lines, err := ReadLastNLines(limit)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"lines": lines,
+		"count": len(lines),
+	})
 }

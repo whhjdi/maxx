@@ -200,6 +200,12 @@ export class WailsTransport implements Transport {
     await this.call<void>('AdminService.DeleteSetting', key);
   }
 
+  // ===== Logs API =====
+
+  async getLogs(limit = 100): Promise<{ lines: string[]; count: number }> {
+    return this.call<{ lines: string[]; count: number }>('AdminService.GetLogs', limit);
+  }
+
   // ===== Wails Events 订阅 =====
 
   subscribe<T = unknown>(eventType: WSMessageType, callback: EventCallback<T>): UnsubscribeFn {
