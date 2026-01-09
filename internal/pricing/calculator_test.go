@@ -198,7 +198,9 @@ func TestPriceTable_Get_PrefixMatch(t *testing.T) {
 		{"claude-sonnet-4-5", true},
 		{"claude-sonnet-4-5-20250514", true}, // prefix match
 		{"claude-opus-4-5", true},
+		{"claude-opus-4-5-20251001", true}, // prefix match
 		{"claude-haiku-4-5", true},
+		{"claude-haiku-4-5-20251001", true}, // prefix match
 		{"gpt-5.1", true},
 		{"gpt-5.1-codex", true},
 		{"gpt-5.2", true},
