@@ -22,7 +22,7 @@ export function AntigravityComingSoon({ onBack }: AntigravityComingSoonProps) {
       </div>
 
       <div className="flex-1 overflow-y-auto p-lg">
-        <div className="max-w-2xl mx-auto">
+        <div className="container mx-auto max-w-[1600px]">
           <div className="flex flex-col items-center justify-center py-16">
             <div
               className="w-20 h-20 rounded-2xl flex items-center justify-center mb-6"

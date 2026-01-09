@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Globe, ChevronLeft, Key, Check, Trash2 } from 'lucide-react';
 import { useUpdateProvider, useDeleteProvider } from '@/hooks/queries';
 import type { Provider, ClientType, CreateProviderData } from '@/lib/transport';
@@ -171,55 +172,75 @@ export function ProviderEditFlow({ provider, onClose }: ProviderEditFlowProps) {
       </div>
 
       <div className="flex-1 overflow-y-auto p-lg">
-        <div className="max-w-2xl mx-auto space-y-6">
-          <div>
-            <label className="text-sm font-medium text-text-primary block mb-2">Display Name</label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-              placeholder="My Provider"
-              className="form-input w-full"
-            />
-          </div>
+        <div className="container mx-auto max-w-[1600px] space-y-8">
+          
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold text-text-primary border-b border-border pb-2">
+              1. Basic Information
+            </h3>
 
-          <div>
-            <label className="text-sm font-medium text-text-primary block mb-2">
-              <div className="flex items-center gap-2">
-                <Globe size={14} />
-                <span>API Endpoint (Optional if client-specific URLs are set)</span>
+            <div className="grid gap-6">
+              <div>
+                <label className="text-sm font-medium text-text-primary block mb-2">Display Name</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                  placeholder="My Provider"
+                  className="form-input w-full"
+                />
               </div>
-            </label>
-            <input
-              type="text"
-              value={formData.baseURL}
-              onChange={(e) => setFormData((prev) => ({ ...prev, baseURL: e.target.value }))}
-              placeholder="https://api.example.com/v1"
-              className="form-input w-full"
-            />
-          </div>
 
-          <div>
-            <label className="text-sm font-medium text-text-primary block mb-2">
-              <div className="flex items-center gap-2">
-                <Key size={14} />
-                <span>API Key (leave empty to keep current)</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="text-sm font-medium text-text-primary block mb-2">
+                    <div className="flex items-center gap-2">
+                      <Globe size={14} />
+                      <span>API Endpoint</span>
+                    </div>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.baseURL}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, baseURL: e.target.value }))}
+                    placeholder="https://api.example.com/v1"
+                    className="form-input w-full"
+                  />
+                  <p className="text-xs text-text-secondary mt-1">
+                    Optional if client-specific URLs are set below.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-text-primary block mb-2">
+                    <div className="flex items-center gap-2">
+                      <Key size={14} />
+                      <span>API Key (leave empty to keep current)</span>
+                    </div>
+                  </label>
+                  <input
+                    type="password"
+                    value={formData.apiKey}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, apiKey: e.target.value }))}
+                    placeholder="••••••••"
+                    className="form-input w-full"
+                  />
+                </div>
               </div>
-            </label>
-            <input
-              type="password"
-              value={formData.apiKey}
-              onChange={(e) => setFormData((prev) => ({ ...prev, apiKey: e.target.value }))}
-              placeholder="••••••••"
-              className="form-input w-full"
-            />
+            </div>
           </div>
 
-          <ClientsConfigSection clients={formData.clients} onUpdateClient={updateClient} />
+          <div className="space-y-6">
+             <h3 className="text-lg font-semibold text-text-primary border-b border-border pb-2">
+               2. Client Configuration
+             </h3>
+             <ClientsConfigSection clients={formData.clients} onUpdateClient={updateClient} />
+          </div>
 
           {saveStatus === 'error' && (
-            <div className="p-3 bg-error/10 border border-error/30 rounded-lg text-sm text-error">
-              Failed to update provider. Please try again.
+            <div className="p-4 bg-error/10 border border-error/30 rounded-lg text-sm text-error flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-error" />
+              Failed to update provider. Please check your connection and try again.
             </div>
           )}
         </div>
@@ -248,9 +269,9 @@ function DeleteConfirmModal({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
-  return (
-    <div className="dialog-overlay flex items-center justify-center z-50">
-      <div className="dialog-content p-6 max-w-sm mx-4">
+  return createPortal(
+    <div className="dialog-overlay z-[9999]">
+      <div className="dialog-content p-6 max-w-sm mx-4 w-full">
         <h3 className="text-lg font-semibold text-text-primary mb-2">Delete Provider?</h3>
         <p className="text-sm text-text-secondary mb-6">
           Are you sure you want to delete "{providerName}"? This action cannot be undone.
@@ -264,6 +285,7 @@ function DeleteConfirmModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

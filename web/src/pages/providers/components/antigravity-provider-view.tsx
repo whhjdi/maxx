@@ -35,50 +35,63 @@ export function AntigravityProviderView({ provider, onDelete, onClose }: Antigra
       </div>
 
       <div className="flex-1 overflow-y-auto p-lg">
-        <div className="max-w-2xl mx-auto space-y-6">
-          <div className="bg-surface-secondary rounded-lg p-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div
-                className="w-12 h-12 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: `${ANTIGRAVITY_COLOR}15` }}
-              >
-                <Wand2 size={24} style={{ color: ANTIGRAVITY_COLOR }} />
+        <div className="container mx-auto max-w-[1600px] space-y-8">
+          
+          {/* Info Card */}
+          <div className="bg-surface-secondary rounded-xl p-6 border border-border">
+            <div className="flex items-start justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm"
+                  style={{ backgroundColor: `${ANTIGRAVITY_COLOR}15` }}
+                >
+                  <Wand2 size={32} style={{ color: ANTIGRAVITY_COLOR }} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-text-primary">{provider.name}</h3>
+                  <div className="text-sm text-text-secondary flex items-center gap-1.5 mt-1">
+                    <Mail size={14} />
+                    {provider.config?.antigravity?.email || 'Unknown'}
+                  </div>
+                </div>
               </div>
-              <div>
-                <div className="font-medium text-text-primary">{provider.name}</div>
-                <div className="text-sm text-text-secondary flex items-center gap-1">
-                  <Mail size={12} />
-                  {provider.config?.antigravity?.email || 'Unknown'}
+              
+              <div className="flex flex-col items-end gap-1 text-right">
+                <div className="text-xs text-text-secondary uppercase tracking-wider font-semibold">Project ID</div>
+                <div className="text-sm font-mono text-text-primary bg-surface-primary px-2 py-1 rounded border border-border/50">
+                  {provider.config?.antigravity?.projectID || '-'}
                 </div>
               </div>
             </div>
 
-            <div className="space-y-3 text-sm">
+            <div className="mt-6 pt-6 border-t border-border/50 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <span className="text-text-muted">Project ID:</span>
-                <span className="ml-2 text-text-primary font-mono">{provider.config?.antigravity?.projectID || '-'}</span>
-              </div>
-              <div>
-                <span className="text-text-muted">Endpoint:</span>
-                <span className="ml-2 text-text-primary font-mono text-xs">
+                <div className="text-xs text-text-secondary uppercase tracking-wider font-semibold mb-1.5">Endpoint</div>
+                <div className="font-mono text-sm text-text-primary break-all">
                   {provider.config?.antigravity?.endpoint || '-'}
-                </span>
+                </div>
               </div>
             </div>
           </div>
 
+          {/* Supported Clients */}
           <div>
-            <div className="text-sm font-medium text-text-primary mb-3">Supported Clients</div>
-            <div className="flex items-center gap-2">
+            <h4 className="text-lg font-semibold text-text-primary mb-4 border-b border-border pb-2">Supported Clients</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {provider.supportedClientTypes?.length > 0 ? (
                 provider.supportedClientTypes.map((ct) => (
-                  <div key={ct} className="flex items-center gap-2 bg-surface-secondary rounded-lg px-3 py-2">
-                    <ClientIcon type={ct} size={20} />
-                    <span className="text-sm text-text-primary capitalize">{ct}</span>
+                  <div key={ct} className="flex items-center gap-3 bg-surface-primary border border-border rounded-xl p-4 shadow-sm">
+                    <ClientIcon type={ct} size={28} />
+                    <div>
+                      <div className="text-sm font-semibold text-text-primary capitalize">{ct}</div>
+                      <div className="text-xs text-text-secondary">Enabled</div>
+                    </div>
                   </div>
                 ))
               ) : (
-                <span className="text-sm text-text-muted">No clients configured</span>
+                <div className="col-span-full text-center py-8 text-text-muted bg-surface-secondary/30 rounded-xl border border-dashed border-border">
+                  No clients configured
+                </div>
               )}
             </div>
           </div>
