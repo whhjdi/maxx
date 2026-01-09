@@ -161,16 +161,16 @@ function RequestStatusBadge({ status }: { status: ProxyRequestStatus }) {
   const getStatusConfig = () => {
     switch (status) {
       case 'PENDING':
+        return {
+          variant: 'default' as const,
+          label: 'Pending',
+          icon: <Loader2 size={10} className="mr-1 flex-shrink-0" />,
+        };
       case 'IN_PROGRESS':
         return {
           variant: 'info' as const,
-          label: status === 'IN_PROGRESS' ? 'Streaming' : 'Pending',
-          icon: (
-            <span className="relative flex items-center justify-center w-[10px] h-[10px] mr-1">
-              <span className="animate-ping absolute inline-flex h-1.5 w-1.5 rounded-full bg-info opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-info"></span>
-            </span>
-          ),
+          label: 'Streaming',
+          icon: <Loader2 size={10} className="mr-1 flex-shrink-0 animate-spin" />,
         };
       case 'COMPLETED':
         return {
