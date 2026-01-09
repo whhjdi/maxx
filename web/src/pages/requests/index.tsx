@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useProxyRequests, useProxyRequestUpdates } from '@/hooks/queries';
+import { useProxyRequests, useProxyRequestUpdates, useProviders } from '@/hooks/queries';
 import {
   Activity,
   RefreshCw,
@@ -38,9 +38,13 @@ export function RequestsPage() {
   const navigate = useNavigate();
   const [page, setPage] = useState(0);
   const { data: requests = [], isLoading, refetch } = useProxyRequests({ limit: PAGE_SIZE, offset: page * PAGE_SIZE });
+  const { data: providers = [] } = useProviders();
 
   // Subscribe to real-time updates
   useProxyRequestUpdates();
+
+  // Create provider ID to name mapping
+  const providerMap = new Map(providers.map(p => [p.id, p.name]));
 
   const total = requests.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -94,6 +98,7 @@ export function RequestsPage() {
                   <TableHead className="w-[180px] font-medium">Time</TableHead>
                   <TableHead className="w-[120px] font-medium">Client</TableHead>
                   <TableHead className="w-[180px] font-medium">Model</TableHead>
+                  <TableHead className="w-[120px] font-medium">Provider</TableHead>
                   <TableHead className="w-[100px] font-medium">Status</TableHead>
                   <TableHead className="w-[60px] font-medium">Code</TableHead>
                   <TableHead className="w-[80px] text-right font-medium">Duration</TableHead>
@@ -110,6 +115,7 @@ export function RequestsPage() {
                   <LogRow
                     key={req.id}
                     request={req}
+                    providerName={providerMap.get(req.providerID)}
                     onClick={() => navigate(`/requests/${req.id}`)}
                   />
                 ))}
@@ -243,9 +249,11 @@ function CostCell({ cost }: { cost: number }) {
 // Log Row Component
 function LogRow({
   request,
+  providerName,
   onClick,
 }: {
   request: ProxyRequest;
+  providerName?: string;
   onClick: () => void;
 }) {
   const isPending = request.status === 'PENDING' || request.status === 'IN_PROGRESS';
@@ -366,6 +374,13 @@ function LogRow({
             </span>
           )}
         </div>
+      </TableCell>
+
+      {/* Provider */}
+      <TableCell className="py-1">
+        <span className="text-sm text-text-secondary truncate max-w-[120px] block" title={providerName}>
+          {providerName || '-'}
+        </span>
       </TableCell>
 
       {/* Status */}
