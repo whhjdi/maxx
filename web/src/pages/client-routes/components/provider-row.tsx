@@ -212,7 +212,7 @@ export function ProviderRowContent({
         {stats && stats.totalRequests > 0 ? (
           <>
             {/* Success Rate */}
-            <div className="flex flex-col items-center justify-center px-3 py-1 min-w-[60px]">
+            <div className="flex flex-col items-center justify-center px-2 py-1 w-[60px]">
               <span className="text-[10px] text-text-muted uppercase tracking-wider font-medium mb-0.5">成功</span>
               <span className={cn(
                 "font-mono font-bold text-sm",
@@ -227,7 +227,7 @@ export function ProviderRowContent({
             <div className="w-px h-8 bg-border/40" />
 
             {/* Request Count */}
-            <div className="flex flex-col items-center justify-center px-3 py-1 min-w-[60px]" title={`成功: ${stats.successfulRequests}, 失败: ${stats.failedRequests}`}>
+            <div className="flex flex-col items-center justify-center px-2 py-1 w-[60px]" title={`成功: ${stats.successfulRequests}, 失败: ${stats.failedRequests}`}>
               <span className="text-[10px] text-text-muted uppercase tracking-wider font-medium mb-0.5">请求</span>
               <span className="font-mono font-bold text-sm text-text-primary">{stats.totalRequests}</span>
             </div>
@@ -235,7 +235,7 @@ export function ProviderRowContent({
             <div className="w-px h-8 bg-border/40" />
 
             {/* Token Usage */}
-            <div className="flex flex-col items-center justify-center px-3 py-1 min-w-[60px]" title={`输入: ${stats.totalInputTokens}, 输出: ${stats.totalOutputTokens}`}>
+            <div className="flex flex-col items-center justify-center px-2 py-1 w-[60px]" title={`输入: ${stats.totalInputTokens}, 输出: ${stats.totalOutputTokens}`}>
               <span className="text-[10px] text-text-muted uppercase tracking-wider font-medium mb-0.5">Token</span>
               <span className="font-mono font-bold text-sm text-blue-400">
                 {formatTokens(stats.totalInputTokens + stats.totalOutputTokens)}
@@ -246,7 +246,7 @@ export function ProviderRowContent({
 
             {/* Cache Rate */}
             <div
-              className="flex flex-col items-center justify-center px-3 py-1 min-w-[60px]"
+              className="flex flex-col items-center justify-center px-2 py-1 w-[60px]"
               title={`Read: ${formatTokens(stats.totalCacheRead)} | Write: ${formatTokens(stats.totalCacheWrite)}`}
             >
               <span className="text-[10px] text-text-muted uppercase tracking-wider font-medium mb-0.5">缓存</span>
@@ -262,7 +262,7 @@ export function ProviderRowContent({
             <div className="w-px h-8 bg-border/40" />
 
             {/* Cost */}
-            <div className="flex flex-col items-center justify-center px-3 py-1 min-w-[60px]" title={`总成本: ${formatCost(stats.totalCost)}`}>
+            <div className="flex flex-col items-center justify-center px-2 py-1 w-[70px]" title={`总成本: ${formatCost(stats.totalCost)}`}>
               <span className="text-[10px] text-text-muted uppercase tracking-wider font-medium mb-0.5">成本</span>
               <span className="font-mono font-bold text-sm text-purple-400">{formatCost(stats.totalCost)}</span>
             </div>
