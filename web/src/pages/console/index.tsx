@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Terminal, Trash2, Pause, Play, ArrowDown, Loader2 } from 'lucide-react';
+import { Terminal, Trash2, Pause, Play, ArrowDown } from 'lucide-react';
 import { getTransport } from '@/lib/transport';
 
 const transport = getTransport();
@@ -8,7 +8,6 @@ export function ConsolePage() {
   const [logs, setLogs] = useState<string[]>([]);
   const [isPaused, setIsPaused] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
   const logsEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const pausedRef = useRef(isPaused);
@@ -18,22 +17,7 @@ export function ConsolePage() {
     pausedRef.current = isPaused;
   }, [isPaused]);
 
-  // Load historical logs on mount
-  useEffect(() => {
-    const loadHistoricalLogs = async () => {
-      try {
-        const { lines } = await transport.getLogs(500);
-        setLogs(lines);
-      } catch (error) {
-        console.error('Failed to load historical logs:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadHistoricalLogs();
-  }, []);
-
-  // Subscribe to log_message events
+  // Subscribe to log_message events (only real-time logs from this session)
   useEffect(() => {
     const unsubscribe = transport.subscribe<string>('log_message', (message) => {
       if (pausedRef.current) return;
@@ -80,9 +64,7 @@ export function ConsolePage() {
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto bg-[#1a1a1a] font-mono text-sm"
       >
-        {isLoading ? (
-          <LoadingState />
-        ) : logs.length === 0 ? (
+        {logs.length === 0 ? (
           <EmptyState />
         ) : (
           <div className="p-4">
@@ -155,16 +137,7 @@ function EmptyState() {
     <div className="flex flex-col items-center justify-center h-full text-text-muted">
       <Terminal size={48} className="mb-4 opacity-30" />
       <p>Waiting for logs...</p>
-      <p className="text-xs mt-1">Server logs will appear here in real-time</p>
-    </div>
-  );
-}
-
-function LoadingState() {
-  return (
-    <div className="flex flex-col items-center justify-center h-full text-text-muted">
-      <Loader2 size={48} className="mb-4 opacity-50 animate-spin" />
-      <p>Loading historical logs...</p>
+      <p className="text-xs mt-1">Logs will appear here in real-time</p>
     </div>
   );
 }

@@ -320,23 +320,33 @@ function LogRow({
   const statusCode = request.responseInfo?.status;
 
   return (
-    <TableRow
-      onClick={onClick}
-      className={cn(
-        "cursor-pointer group border-none transition-all duration-300",
-        // Base styles
-        !isPending && !isRecent && "hover:bg-surface-hover/50 border-l-2 border-l-transparent",
-        
-        // Failed state
-        isFailed && "bg-error/5 hover:bg-error/10 border-l-2 border-l-transparent",
-        
-        // Active/Pending state - Pulse Effect
-        isPending && "bg-accent/5 hover:bg-accent/10 border-l-2 border-l-accent animate-pulse",
+    <>
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes subtle-pulse {
+          0%, 100% { background-color: rgba(0, 120, 212, 0.05); }
+          50% { background-color: rgba(0, 120, 212, 0.15); }
+        }
+        .animate-subtle-pulse {
+          animation: subtle-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+      `}} />
+      <TableRow
+        onClick={onClick}
+        className={cn(
+          "cursor-pointer group border-none transition-all duration-300",
+          // Base styles
+          !isPending && !isRecent && "hover:bg-surface-hover/50 border-l-2 border-l-transparent",
+          
+          // Failed state
+          isFailed && "bg-error/5 hover:bg-error/10 border-l-2 border-l-transparent",
+          
+          // Active/Pending state - Pulse Effect
+          isPending && "animate-subtle-pulse border-l-2 border-l-accent",
 
-        // New Item Flash Animation
-        isRecent && !isPending && "animate-in fade-in duration-700 bg-accent/20 border-l-2 border-l-accent"
-      )}
-    >
+          // New Item Flash Animation
+          isRecent && !isPending && "animate-in fade-in duration-700 bg-accent/40 border-l-2 border-l-accent"
+        )}
+      >
       {/* Time */}
       <TableCell className="py-1 font-mono text-sm text-text-primary font-medium whitespace-nowrap">
         {formatTime(request.startTime || request.createdAt)}
@@ -428,6 +438,7 @@ function LogRow({
         <TokenCell count={request.cacheWriteCount} color="text-amber-400" />
       </TableCell>
     </TableRow>
+    </>
   );
 }
 
