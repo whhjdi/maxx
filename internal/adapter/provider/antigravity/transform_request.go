@@ -34,34 +34,38 @@ func TransformClaudeToGemini(
 		mappedModel = "gemini-2.5-flash"
 	}
 
-	// 4. Thinking block pre-filtering
+	// 4. Calculate final thinking mode state (before building request)
+	// Reference: Antigravity-Manager's thinking mode resolution (line 170-251)
+	hasThinking := calculateFinalThinkingState(&claudeReq, mappedModel)
+
+	// 5. Thinking block pre-filtering
 	filterInvalidThinkingBlocks(&claudeReq.Messages)
 
-	// 5. Tool loop recovery
+	// 6. Tool loop recovery
 	closeToolLoopForThinking(&claudeReq.Messages)
 
-	// 6. Build Gemini request
+	// 7. Build Gemini request
 	geminiReq := make(map[string]interface{})
 
-	// 5.1 System instruction
+	// 7.1 System instruction
 	if systemInstruction := buildSystemInstruction(&claudeReq, mappedModel); systemInstruction != nil {
 		geminiReq["systemInstruction"] = systemInstruction
 	}
 
-	// 5.2 Message contents
+	// 7.2 Message contents
 	contents, err := buildContents(claudeReq.Messages, mappedModel, sessionID, signatureCache)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build contents: %w", err)
 	}
 	geminiReq["contents"] = contents
 
-	// 5.3 Tools
+	// 7.3 Tools
 	if tools := buildTools(&claudeReq); tools != nil {
 		geminiReq["tools"] = tools
 	}
 
-	// 5.4 Generation Config
-	genConfig := buildGenerationConfig(&claudeReq, mappedModel, stream)
+	// 7.4 Generation Config (use pre-calculated hasThinking)
+	genConfig := buildGenerationConfig(&claudeReq, mappedModel, stream, hasThinking)
 	geminiReq["generationConfig"] = genConfig
 
 	// 5.5 Safety Settings (configurable via environment)
@@ -346,6 +350,77 @@ func detectWebSearchTool(claudeReq *ClaudeRequest) bool {
 			strings.Contains(descLower, "internet search") {
 			return true
 		}
+	}
+
+	return false
+}
+
+// calculateFinalThinkingState determines the final thinking mode state
+// after all checks (model defaults, target support, history compatibility)
+// Reference: Antigravity-Manager's thinking mode resolution (line 170-251)
+func calculateFinalThinkingState(claudeReq *ClaudeRequest, mappedModel string) bool {
+	// 1. Check explicit thinking config first
+	thinkingRequested := claudeReq.Thinking != nil && claudeReq.Thinking.Type == "enabled"
+
+	// 2. If no explicit config, check if model should enable thinking by default (Opus 4.5)
+	if !thinkingRequested && shouldEnableThinkingByDefault(claudeReq.Model) {
+		thinkingRequested = true
+	}
+
+	// 3. Check if target model supports thinking
+	if thinkingRequested && !TargetModelSupportsThinking(mappedModel) {
+		log.Printf("[Antigravity] Target model '%s' does not support thinking. Force disabling.", mappedModel)
+		return false
+	}
+
+	// 4. Check history compatibility
+	// Reference: Antigravity-Manager's should_disable_thinking_due_to_history (line 196-202)
+	if thinkingRequested {
+		// Need to convert messages to Gemini format first to check compatibility
+		// For now, we'll do a simplified check on Claude messages
+		if shouldDisableThinkingDueToClaudeHistory(claudeReq.Messages) {
+			log.Printf("[Antigravity] Disabling thinking due to incompatible tool-use history (mixed application)")
+			return false
+		}
+	}
+
+	return thinkingRequested
+}
+
+// shouldDisableThinkingDueToClaudeHistory checks Claude messages for thinking/tool incompatibility
+// Reference: Antigravity-Manager's should_disable_thinking_due_to_history
+func shouldDisableThinkingDueToClaudeHistory(messages []ClaudeMessage) bool {
+	// Find last assistant message
+	for i := len(messages) - 1; i >= 0; i-- {
+		if messages[i].Role != "assistant" {
+			continue
+		}
+
+		// Parse content blocks
+		blocks := parseContentBlocks(messages[i].Content)
+		if blocks == nil {
+			return false
+		}
+
+		hasToolUse := false
+		hasThinking := false
+
+		for _, block := range blocks {
+			if block.Type == "tool_use" {
+				hasToolUse = true
+			}
+			if block.Type == "thinking" {
+				hasThinking = true
+			}
+		}
+
+		// If has tool_use but no thinking -> incompatible
+		if hasToolUse && !hasThinking {
+			return true
+		}
+
+		// Only check the last assistant message
+		return false
 	}
 
 	return false
