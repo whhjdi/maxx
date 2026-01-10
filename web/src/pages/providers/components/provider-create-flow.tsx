@@ -5,7 +5,7 @@ import type { ClientType, CreateProviderData } from '@/lib/transport';
 import { quickTemplates, defaultClients, type ClientConfig, type ProviderFormData, type CreateStep } from '../types';
 import { ClientsConfigSection } from './clients-config-section';
 import { SelectTypeStep } from './select-type-step';
-import { AntigravityComingSoon } from './antigravity-coming-soon';
+import { AntigravityTokenImport } from './antigravity-token-import';
 
 interface ProviderCreateFlowProps {
   onClose: () => void;
@@ -29,7 +29,7 @@ export function ProviderCreateFlow({ onClose }: ProviderCreateFlowProps) {
   const selectType = (type: 'custom' | 'antigravity') => {
     setFormData((prev) => ({ ...prev, type }));
     if (type === 'antigravity') {
-      setStep('antigravity-coming-soon');
+      setStep('antigravity-import');
     }
   };
 
@@ -108,7 +108,7 @@ export function ProviderCreateFlow({ onClose }: ProviderCreateFlowProps) {
   };
 
   const handleBack = () => {
-    if (step === 'custom-config' || step === 'antigravity-coming-soon') {
+    if (step === 'custom-config' || step === 'antigravity-import') {
       setStep('select-type');
     } else {
       onClose();
@@ -127,8 +127,12 @@ export function ProviderCreateFlow({ onClose }: ProviderCreateFlowProps) {
     );
   }
 
-  if (step === 'antigravity-coming-soon') {
-    return <AntigravityComingSoon onBack={handleBack} />;
+  if (step === 'antigravity-import') {
+    const handleCreateAntigravityProvider = async (data: CreateProviderData) => {
+      await createProvider.mutateAsync(data);
+      onClose();
+    };
+    return <AntigravityTokenImport onBack={handleBack} onCreateProvider={handleCreateAntigravityProvider} />;
   }
 
   // Custom: Configuration

@@ -24,6 +24,9 @@ import type {
   WSMessageType,
   EventCallback,
   UnsubscribeFn,
+  AntigravityTokenValidationResult,
+  AntigravityBatchValidationResult,
+  AntigravityQuotaData,
 } from './types';
 
 // Wails 事件 API 类型
@@ -220,6 +223,24 @@ export class WailsTransport implements Transport {
 
   async getLogs(limit = 100): Promise<{ lines: string[]; count: number }> {
     return this.call<{ lines: string[]; count: number }>('AdminService.GetLogs', limit);
+  }
+
+  // ===== Antigravity API =====
+
+  async validateAntigravityToken(refreshToken: string): Promise<AntigravityTokenValidationResult> {
+    return this.call<AntigravityTokenValidationResult>('AntigravityService.ValidateToken', refreshToken);
+  }
+
+  async validateAntigravityTokens(tokens: string[]): Promise<AntigravityBatchValidationResult> {
+    return this.call<AntigravityBatchValidationResult>('AntigravityService.ValidateTokens', tokens);
+  }
+
+  async validateAntigravityTokenText(tokenText: string): Promise<AntigravityBatchValidationResult> {
+    return this.call<AntigravityBatchValidationResult>('AntigravityService.ValidateTokenText', tokenText);
+  }
+
+  async getAntigravityProviderQuota(providerId: number, forceRefresh?: boolean): Promise<AntigravityQuotaData> {
+    return this.call<AntigravityQuotaData>('AntigravityService.GetProviderQuota', providerId, forceRefresh ?? false);
   }
 
   // ===== Wails Events 订阅 =====

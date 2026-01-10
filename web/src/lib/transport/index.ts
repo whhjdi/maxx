@@ -37,6 +37,12 @@ export type {
   // 回调
   EventCallback,
   UnsubscribeFn,
+  // Antigravity
+  AntigravityUserInfo,
+  AntigravityModelQuota,
+  AntigravityQuotaData,
+  AntigravityTokenValidationResult,
+  AntigravityBatchValidationResult,
 } from './types';
 
 export type {

@@ -65,4 +65,4 @@ export type ProviderFormData = {
 };
 
 // Create step type
-export type CreateStep = 'select-type' | 'custom-config' | 'antigravity-coming-soon';
+export type CreateStep = 'select-type' | 'custom-config' | 'antigravity-import';

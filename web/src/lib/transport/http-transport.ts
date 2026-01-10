@@ -26,6 +26,9 @@ import type {
   WSMessage,
   EventCallback,
   UnsubscribeFn,
+  AntigravityTokenValidationResult,
+  AntigravityBatchValidationResult,
+  AntigravityQuotaData,
 } from './types';
 
 export class HttpTransport implements Transport {
@@ -254,6 +257,41 @@ export class HttpTransport implements Transport {
       params: { limit },
     });
     return data ?? { lines: [], count: 0 };
+  }
+
+  // ===== Antigravity API =====
+
+  async validateAntigravityToken(refreshToken: string): Promise<AntigravityTokenValidationResult> {
+    const { data } = await axios.post<AntigravityTokenValidationResult>(
+      '/antigravity/validate-token',
+      { refreshToken }
+    );
+    return data;
+  }
+
+  async validateAntigravityTokens(tokens: string[]): Promise<AntigravityBatchValidationResult> {
+    const { data } = await axios.post<AntigravityBatchValidationResult>(
+      '/antigravity/validate-tokens',
+      { tokens }
+    );
+    return data;
+  }
+
+  async validateAntigravityTokenText(tokenText: string): Promise<AntigravityBatchValidationResult> {
+    const { data } = await axios.post<AntigravityBatchValidationResult>(
+      '/antigravity/validate-tokens',
+      { tokenText }
+    );
+    return data;
+  }
+
+  async getAntigravityProviderQuota(providerId: number, forceRefresh?: boolean): Promise<AntigravityQuotaData> {
+    const params = forceRefresh ? { refresh: 'true' } : undefined;
+    const { data } = await axios.get<AntigravityQuotaData>(
+      `/antigravity/providers/${providerId}/quota`,
+      { params }
+    );
+    return data;
   }
 
   // ===== WebSocket 订阅 =====

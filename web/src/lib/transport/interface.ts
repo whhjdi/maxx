@@ -23,6 +23,9 @@ import type {
   WSMessageType,
   EventCallback,
   UnsubscribeFn,
+  AntigravityTokenValidationResult,
+  AntigravityBatchValidationResult,
+  AntigravityQuotaData,
 } from './types';
 
 /**
@@ -87,6 +90,12 @@ export interface Transport {
 
   // ===== Logs API =====
   getLogs(limit?: number): Promise<{ lines: string[]; count: number }>;
+
+  // ===== Antigravity API =====
+  validateAntigravityToken(refreshToken: string): Promise<AntigravityTokenValidationResult>;
+  validateAntigravityTokens(tokens: string[]): Promise<AntigravityBatchValidationResult>;
+  validateAntigravityTokenText(tokenText: string): Promise<AntigravityBatchValidationResult>;
+  getAntigravityProviderQuota(providerId: number, forceRefresh?: boolean): Promise<AntigravityQuotaData>;
 
   // ===== 实时订阅 =====
   subscribe<T = unknown>(eventType: WSMessageType, callback: EventCallback<T>): UnsubscribeFn;

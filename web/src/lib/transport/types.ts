@@ -39,7 +39,10 @@ export interface Provider {
   supportedClientTypes: ClientType[];
 }
 
-export type CreateProviderData = Omit<Provider, 'id' | 'createdAt' | 'updatedAt'>;
+// supportedClientTypes 可选，后端会根据 provider type 自动设置
+export type CreateProviderData = Omit<Provider, 'id' | 'createdAt' | 'updatedAt' | 'supportedClientTypes'> & {
+  supportedClientTypes?: ClientType[];
+};
 
 // ===== Project =====
 
@@ -227,6 +230,40 @@ export interface ProviderStats {
   totalCacheRead: number;
   totalCacheWrite: number;
   totalCost: number; // 微美元
+}
+
+// ===== Antigravity 相关 =====
+
+export interface AntigravityUserInfo {
+  email: string;
+  name: string;
+  picture: string;
+}
+
+export interface AntigravityModelQuota {
+  name: string;
+  percentage: number; // 0-100
+  resetTime: string;
+}
+
+export interface AntigravityQuotaData {
+  models: AntigravityModelQuota[];
+  lastUpdated: number;
+  isForbidden: boolean;
+  subscriptionTier: string; // FREE/PRO/ULTRA
+}
+
+export interface AntigravityTokenValidationResult {
+  valid: boolean;
+  error?: string;
+  userInfo?: AntigravityUserInfo;
+  projectID?: string;
+  quota?: AntigravityQuotaData;
+}
+
+export interface AntigravityBatchValidationResult {
+  results: AntigravityTokenValidationResult[];
+  total: number;
 }
 
 // ===== 回调类型 =====

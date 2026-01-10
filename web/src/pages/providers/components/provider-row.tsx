@@ -81,6 +81,13 @@ export function ProviderRow({ provider, stats, streamingCount, onClick }: Provid
         />
       )}
 
+      {/* Streaming Badge - 右上角 */}
+      {streamingCount > 0 && (
+        <div className="absolute -top-1 -right-1 z-20">
+          <StreamingBadge count={streamingCount} color={color} />
+        </div>
+      )}
+
       {/* Provider Icon */}
       <div
         className="relative z-10 w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm border border-white/5"
@@ -91,9 +98,6 @@ export function ProviderRow({ provider, stats, streamingCount, onClick }: Provid
         ) : (
           <Server size={24} style={{ color }} />
         )}
-        <div className="absolute -top-2 -right-2">
-           <StreamingBadge count={streamingCount} color={color} className="scale-90" />
-        </div>
       </div>
 
       {/* Provider Info */}
