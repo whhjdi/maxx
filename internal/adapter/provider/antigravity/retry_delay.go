@@ -14,19 +14,21 @@ type RateLimitReason int
 
 const (
 	RateLimitReasonUnknown RateLimitReason = iota
-	RateLimitReasonQuotaExhausted   // QUOTA_EXHAUSTED - 配额耗尽
-	RateLimitReasonRateLimitExceeded // RATE_LIMIT_EXCEEDED - 速率限制
-	RateLimitReasonServerError       // 5xx errors
+	RateLimitReasonQuotaExhausted        // QUOTA_EXHAUSTED - 配额耗尽
+	RateLimitReasonRateLimitExceeded     // RATE_LIMIT_EXCEEDED - 速率限制
+	RateLimitReasonModelCapacityExhausted // MODEL_CAPACITY_EXHAUSTED - 模型容量耗尽
+	RateLimitReasonServerError           // 5xx errors
 )
 
 // Default retry delays by reason (like Antigravity-Manager)
 const (
-	DefaultQuotaExhaustedDelay   = 3600 * time.Second // 1 hour
-	DefaultRateLimitDelay        = 30 * time.Second   // 30 seconds
-	DefaultServerErrorDelay      = 20 * time.Second   // 20 seconds
-	DefaultUnknownDelay          = 60 * time.Second   // 60 seconds
-	MinRetryDelay                = 2 * time.Second    // Minimum 2 seconds (safety buffer)
-	JitterFactor                 = 0.2                // ±20% jitter
+	DefaultQuotaExhaustedDelay      = 60 * time.Second    // 60 seconds (first failure, like Antigravity-Manager)
+	DefaultRateLimitDelay           = 30 * time.Second    // 30 seconds
+	DefaultModelCapacityDelay       = 15 * time.Second    // 15 seconds (temporary GPU unavailability)
+	DefaultServerErrorDelay         = 20 * time.Second    // 20 seconds
+	DefaultUnknownDelay             = 60 * time.Second    // 60 seconds
+	MinRetryDelay                   = 2 * time.Second     // Minimum 2 seconds (safety buffer)
+	JitterFactor                    = 0.2                 // ±20% jitter
 )
 
 // RetryInfo contains parsed retry information from a 429 response
@@ -197,10 +199,12 @@ func parseDurationRegex(s string) time.Duration {
 }
 
 // parseRateLimitReason determines the rate limit reason from response body
+// (like Antigravity-Manager's parse_rate_limit_reason)
 func parseRateLimitReason(body string) RateLimitReason {
 	// Try to parse from JSON
 	var errorResp struct {
 		Error struct {
+			Message string `json:"message"`
 			Details []struct {
 				Reason string `json:"reason"`
 			} `json:"details"`
@@ -208,23 +212,35 @@ func parseRateLimitReason(body string) RateLimitReason {
 	}
 
 	if err := json.Unmarshal([]byte(body), &errorResp); err == nil {
+		// Check reason field first
 		if len(errorResp.Error.Details) > 0 {
 			switch errorResp.Error.Details[0].Reason {
 			case "QUOTA_EXHAUSTED":
 				return RateLimitReasonQuotaExhausted
 			case "RATE_LIMIT_EXCEEDED":
 				return RateLimitReasonRateLimitExceeded
+			case "MODEL_CAPACITY_EXHAUSTED":
+				return RateLimitReasonModelCapacityExhausted
+			}
+		}
+
+		// [Antigravity-Manager] Try to detect TPM from message field
+		if errorResp.Error.Message != "" {
+			msgLower := strings.ToLower(errorResp.Error.Message)
+			if strings.Contains(msgLower, "per minute") || strings.Contains(msgLower, "rate limit") {
+				return RateLimitReasonRateLimitExceeded
 			}
 		}
 	}
 
 	// Fallback to text matching (like Antigravity-Manager)
+	// [FIX] Prioritize "per minute" detection to avoid misclassifying TPM as quota exhaustion
 	bodyLower := strings.ToLower(body)
+	if strings.Contains(bodyLower, "per minute") || strings.Contains(bodyLower, "rate limit") || strings.Contains(bodyLower, "too many requests") {
+		return RateLimitReasonRateLimitExceeded
+	}
 	if strings.Contains(bodyLower, "exhausted") || strings.Contains(bodyLower, "quota") {
 		return RateLimitReasonQuotaExhausted
-	}
-	if strings.Contains(bodyLower, "rate limit") || strings.Contains(bodyLower, "too many requests") {
-		return RateLimitReasonRateLimitExceeded
 	}
 
 	return RateLimitReasonUnknown
@@ -237,6 +253,8 @@ func getDefaultDelay(reason RateLimitReason) time.Duration {
 		return DefaultQuotaExhaustedDelay
 	case RateLimitReasonRateLimitExceeded:
 		return DefaultRateLimitDelay
+	case RateLimitReasonModelCapacityExhausted:
+		return DefaultModelCapacityDelay
 	case RateLimitReasonServerError:
 		return DefaultServerErrorDelay
 	default:
@@ -263,6 +281,8 @@ func (r RateLimitReason) String() string {
 		return "QUOTA_EXHAUSTED"
 	case RateLimitReasonRateLimitExceeded:
 		return "RATE_LIMIT_EXCEEDED"
+	case RateLimitReasonModelCapacityExhausted:
+		return "MODEL_CAPACITY_EXHAUSTED"
 	case RateLimitReasonServerError:
 		return "SERVER_ERROR"
 	default:
