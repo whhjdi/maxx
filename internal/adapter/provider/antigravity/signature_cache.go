@@ -43,8 +43,8 @@ const (
 	SignatureTextHashLen = 16
 
 	// MinSignatureLength is the minimum length for a valid thought signature
-	// [FIX] Aligned with Antigravity-Manager (10) instead of 50
-	MinSignatureLength = 10
+	// [Aligned with Antigravity-Manager] Uses 50 to match reference implementation
+	MinSignatureLength = 50
 
 	// SkipSignatureValidator is the sentinel value to bypass signature validation
 	// Used when no valid signature is available for tool calls

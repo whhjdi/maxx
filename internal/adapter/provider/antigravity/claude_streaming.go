@@ -589,7 +589,9 @@ func (s *ClaudeStreamingState) ProcessGeminiSSELine(line string) []byte {
 	// Parse Gemini chunk
 	var chunk GeminiStreamChunk
 	if err := json.Unmarshal([]byte(dataStr), &chunk); err != nil {
-		return nil
+		// [SSE Error Recovery] Handle parse errors gracefully (like Antigravity-Manager)
+		// Instead of silently dropping, try to extract partial data or log
+		return s.handleParseError(dataStr, err)
 	}
 
 	var output []byte
@@ -801,4 +803,74 @@ func extractFirstPath(paths interface{}) string {
 // generateRandomID generates a simple random ID using time
 func generateRandomID() int64 {
 	return time.Now().UnixNano()
+}
+
+// handleParseError handles SSE parse errors gracefully (like Antigravity-Manager's handle_parse_error)
+// Attempts to recover partial data or emits a warning text block
+func (s *ClaudeStreamingState) handleParseError(dataStr string, err error) []byte {
+	// Try to extract error message from the data if it's an error response
+	if strings.Contains(dataStr, "error") {
+		// Attempt to parse as error response
+		var errorResp struct {
+			Error struct {
+				Message string `json:"message"`
+				Code    int    `json:"code"`
+				Status  string `json:"status"`
+			} `json:"error"`
+		}
+		if json.Unmarshal([]byte(dataStr), &errorResp) == nil && errorResp.Error.Message != "" {
+			// Emit error as text content
+			errorText := fmt.Sprintf("\n\n[API Error: %s (code: %d, status: %s)]\n",
+				errorResp.Error.Message, errorResp.Error.Code, errorResp.Error.Status)
+
+			var output []byte
+			// Ensure message_start is sent
+			if !s.messageStartSent {
+				startData := s.emitMessageStart(&GeminiStreamChunk{})
+				if startData != nil {
+					output = append(output, startData...)
+				}
+			}
+
+			// Emit as text block
+			textChunks := s.processText(errorText, "")
+			for _, c := range textChunks {
+				output = append(output, c...)
+			}
+			return output
+		}
+	}
+
+	// For other parse errors, try partial text extraction
+	if strings.Contains(dataStr, "\"text\"") {
+		// Try to extract text field directly using regex-like approach
+		textStart := strings.Index(dataStr, "\"text\":\"")
+		if textStart >= 0 {
+			textStart += 8
+			textEnd := strings.Index(dataStr[textStart:], "\"")
+			if textEnd > 0 {
+				partialText := dataStr[textStart : textStart+textEnd]
+				// Unescape basic JSON escapes
+				partialText = strings.ReplaceAll(partialText, "\\n", "\n")
+				partialText = strings.ReplaceAll(partialText, "\\t", "\t")
+				partialText = strings.ReplaceAll(partialText, "\\\"", "\"")
+
+				var output []byte
+				if !s.messageStartSent {
+					startData := s.emitMessageStart(&GeminiStreamChunk{})
+					if startData != nil {
+						output = append(output, startData...)
+					}
+				}
+				textChunks := s.processText(partialText, "")
+				for _, c := range textChunks {
+					output = append(output, c...)
+				}
+				return output
+			}
+		}
+	}
+
+	// Cannot recover - return nil (drop the malformed chunk)
+	return nil
 }

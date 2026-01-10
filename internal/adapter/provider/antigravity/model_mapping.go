@@ -91,30 +91,6 @@ func isHaikuModel(model string) bool {
 	return strings.Contains(modelLower, "haiku")
 }
 
-// ShouldEnableThinkingByDefault checks if thinking mode should be enabled by default
-// Claude Code v2.0.67+ enables thinking by default for Opus 4.5 models
-func ShouldEnableThinkingByDefault(model string) bool {
-	modelLower := strings.ToLower(model)
-
-	// Enable thinking by default for Opus 4.5 variants
-	if strings.Contains(modelLower, "opus-4-5") || strings.Contains(modelLower, "opus-4.5") {
-		return true
-	}
-
-	// Also enable for explicit thinking model variants
-	if strings.Contains(modelLower, "-thinking") {
-		return true
-	}
-
-	return false
-}
-
-// TargetModelSupportsThinking checks if the target model supports thinking mode
-func TargetModelSupportsThinking(mappedModel string) bool {
-	// Only models with "-thinking" suffix or Claude models support thinking
-	return strings.Contains(mappedModel, "-thinking") || strings.HasPrefix(mappedModel, "claude-")
-}
-
 // ParseImageConfig parses image configuration from model name suffixes
 // Returns imageConfig and cleanModelName
 func ParseImageConfig(modelName string) (map[string]interface{}, string) {

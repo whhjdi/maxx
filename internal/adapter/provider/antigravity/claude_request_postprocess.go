@@ -20,7 +20,9 @@ You are pair programming with a USER to solve their coding task. The task may re
 // 4. Closes broken tool loops by injecting synthetic messages (like Antigravity-Manager)
 // 5. Uses cached signatures for thinking blocks
 // 6. Applies skip_thought_signature_validator for tool calls without valid signatures
-func PostProcessClaudeRequest(geminiBody []byte, sessionID string, hasThinking bool) []byte {
+// 7. Merges adjacent messages with same role (like Antigravity-Manager)
+// 8. Injects toolConfig, stopSequences, effortLevel (like Antigravity-Manager)
+func PostProcessClaudeRequest(geminiBody []byte, sessionID string, hasThinking bool, claudeRequest []byte) []byte {
 	var request map[string]interface{}
 	if err := json.Unmarshal(geminiBody, &request); err != nil {
 		return geminiBody
@@ -56,11 +58,44 @@ func PostProcessClaudeRequest(geminiBody []byte, sessionID string, hasThinking b
 		}
 	}
 
-	// 6. Process contents for signature caching and skip sentinel
+	// 6. Merge adjacent messages with same role (like Antigravity-Manager)
+	// Gemini API requires strict user/model role alternation
+	if contents, ok := request["contents"].([]interface{}); ok {
+		merged := MergeAdjacentRoles(contents)
+		if len(merged) != len(contents) {
+			request["contents"] = merged
+			modified = true
+		}
+	}
+
+	// 7. Process contents for signature caching and skip sentinel
 	if contents, ok := request["contents"].([]interface{}); ok {
 		if processContentsForSignatures(contents, sessionID) {
 			modified = true
 		}
+	}
+
+	// 8. Inject toolConfig with VALIDATED mode when tools exist (like Antigravity-Manager)
+	if InjectToolConfig(request) {
+		modified = true
+	}
+
+	// 9. Inject stop sequences to generationConfig (like Antigravity-Manager)
+	if InjectStopSequences(request) {
+		modified = true
+	}
+
+	// 10. Inject effortLevel from Claude output_config.effort (like Antigravity-Manager)
+	if claudeRequest != nil {
+		if InjectEffortLevel(request, claudeRequest) {
+			modified = true
+		}
+	}
+
+	// 11. If thinking is disabled, clean all thinking-related fields recursively
+	if !hasThinking {
+		CleanThinkingFieldsRecursive(request)
+		modified = true
 	}
 
 	if !modified {
@@ -468,6 +503,31 @@ func hasThinkingBlockInContent(content map[string]interface{}) bool {
 	return false
 }
 
+// DefaultStopSequences are stop sequences added to generationConfig
+// (like Antigravity-Manager's default stop sequences)
+var DefaultStopSequences = []string{
+	"<|user|>",
+	"<|endoftext|>",
+	"<|end_of_turn|>",
+	"[DONE]",
+	"\n\nHuman:",
+}
+
+// MapEffortLevel maps Claude effort level to Gemini effortLevel
+// (like Antigravity-Manager's effort level mapping)
+func MapEffortLevel(effort string) string {
+	switch strings.ToLower(effort) {
+	case "high":
+		return "HIGH"
+	case "medium":
+		return "MEDIUM"
+	case "low":
+		return "LOW"
+	default:
+		return "HIGH" // Default to HIGH
+	}
+}
+
 // CloseToolLoopForThinking recovers from broken tool loops by injecting synthetic messages
 // (exactly like Antigravity-Manager's close_tool_loop_for_thinking)
 //
@@ -523,4 +583,144 @@ func CloseToolLoopForThinking(request map[string]interface{}) bool {
 	}
 
 	return false
+}
+
+// MergeAdjacentRoles merges consecutive messages with the same role
+// (like Antigravity-Manager's merge_adjacent_roles)
+// Gemini API requires strict user/model role alternation
+func MergeAdjacentRoles(contents []interface{}) []interface{} {
+	if len(contents) == 0 {
+		return contents
+	}
+
+	merged := make([]interface{}, 0, len(contents))
+	currentMsg, ok := contents[0].(map[string]interface{})
+	if !ok {
+		return contents
+	}
+
+	for i := 1; i < len(contents); i++ {
+		nextMsg, ok := contents[i].(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		currentRole, _ := currentMsg["role"].(string)
+		nextRole, _ := nextMsg["role"].(string)
+
+		if currentRole == nextRole {
+			// Same role - merge parts
+			currentParts, _ := currentMsg["parts"].([]interface{})
+			nextParts, _ := nextMsg["parts"].([]interface{})
+			if currentParts == nil {
+				currentParts = []interface{}{}
+			}
+			if nextParts != nil {
+				currentParts = append(currentParts, nextParts...)
+			}
+			currentMsg["parts"] = currentParts
+		} else {
+			// Different role - push current and start new
+			merged = append(merged, currentMsg)
+			currentMsg = nextMsg
+		}
+	}
+
+	// Don't forget the last message
+	merged = append(merged, currentMsg)
+	return merged
+}
+
+// CleanThinkingFieldsRecursive recursively removes thought and thoughtSignature fields
+// (like Antigravity-Manager's clean_thinking_fields_recursive)
+// Used when thinking is disabled but request contains thinking-related fields
+func CleanThinkingFieldsRecursive(val interface{}) {
+	switch v := val.(type) {
+	case map[string]interface{}:
+		delete(v, "thought")
+		delete(v, "thoughtSignature")
+		for _, child := range v {
+			CleanThinkingFieldsRecursive(child)
+		}
+	case []interface{}:
+		for _, item := range v {
+			CleanThinkingFieldsRecursive(item)
+		}
+	}
+}
+
+// InjectToolConfig adds toolConfig with functionCallingConfig.mode = "VALIDATED"
+// (like Antigravity-Manager's tool config injection)
+func InjectToolConfig(request map[string]interface{}) bool {
+	tools, ok := request["tools"].([]interface{})
+	if !ok || len(tools) == 0 {
+		return false
+	}
+
+	// Check if any tool has functionDeclarations
+	hasFuncDecls := false
+	for _, tool := range tools {
+		if toolMap, ok := tool.(map[string]interface{}); ok {
+			if _, has := toolMap["functionDeclarations"]; has {
+				hasFuncDecls = true
+				break
+			}
+		}
+	}
+
+	if !hasFuncDecls {
+		return false
+	}
+
+	// Add toolConfig
+	request["toolConfig"] = map[string]interface{}{
+		"functionCallingConfig": map[string]interface{}{
+			"mode": "VALIDATED",
+		},
+	}
+	return true
+}
+
+// InjectStopSequences adds default stop sequences to generationConfig
+// (like Antigravity-Manager's stop sequences injection)
+func InjectStopSequences(request map[string]interface{}) bool {
+	genConfig, ok := request["generationConfig"].(map[string]interface{})
+	if !ok {
+		genConfig = map[string]interface{}{}
+		request["generationConfig"] = genConfig
+	}
+
+	// Only inject if not already present
+	if _, exists := genConfig["stopSequences"]; exists {
+		return false
+	}
+
+	genConfig["stopSequences"] = DefaultStopSequences
+	return true
+}
+
+// InjectEffortLevel adds effortLevel to generationConfig from Claude output_config.effort
+// (like Antigravity-Manager's effort level injection)
+func InjectEffortLevel(request map[string]interface{}, claudeRequest []byte) bool {
+	var claudeReq struct {
+		OutputConfig struct {
+			Effort string `json:"effort"`
+		} `json:"output_config"`
+	}
+	if err := json.Unmarshal(claudeRequest, &claudeReq); err != nil {
+		return false
+	}
+
+	if claudeReq.OutputConfig.Effort == "" {
+		return false
+	}
+
+	genConfig, ok := request["generationConfig"].(map[string]interface{})
+	if !ok {
+		genConfig = map[string]interface{}{}
+		request["generationConfig"] = genConfig
+	}
+
+	genConfig["effortLevel"] = MapEffortLevel(claudeReq.OutputConfig.Effort)
+	return true
 }
