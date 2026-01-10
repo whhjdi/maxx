@@ -96,3 +96,15 @@ export function useAllProviderStats() {
     refetchInterval: 30000,
   });
 }
+
+// 获取 Antigravity Provider 额度
+export function useAntigravityQuota(providerId: number, enabled = true) {
+  return useQuery({
+    queryKey: [...providerKeys.all, 'antigravity-quota', providerId],
+    queryFn: () => transport.getAntigravityProviderQuota(providerId, false),
+    enabled: enabled && providerId > 0,
+    // 每 60 秒刷新一次
+    refetchInterval: 60000,
+    staleTime: 30000,
+  });
+}

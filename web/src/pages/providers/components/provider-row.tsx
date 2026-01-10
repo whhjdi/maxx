@@ -2,9 +2,10 @@ import { ChevronRight, Globe, Mail, Server, Wand2, Activity } from 'lucide-react
 import { ClientIcon } from '@/components/icons/client-icons';
 import { StreamingBadge } from '@/components/ui/streaming-badge';
 import { getProviderColor } from '@/lib/provider-colors';
-import type { Provider, ProviderStats } from '@/lib/transport';
+import type { Provider, ProviderStats, AntigravityQuotaData } from '@/lib/transport';
 import { ANTIGRAVITY_COLOR } from '../types';
 import { cn } from '@/lib/utils';
+import { useAntigravityQuota } from '@/hooks/queries';
 
 // 格式化 Token 数量
 function formatTokens(count: number): string {
@@ -44,9 +45,46 @@ interface ProviderRowProps {
   onClick: () => void;
 }
 
+// 获取 Claude 模型额度百分比和重置时间
+function getClaudeQuotaInfo(quota: AntigravityQuotaData | undefined): { percentage: number; resetTime: string } | null {
+  if (!quota || quota.isForbidden) return null;
+  const claudeModel = quota.models.find(m => m.name.includes('claude'));
+  if (!claudeModel) return null;
+  return { percentage: claudeModel.percentage, resetTime: claudeModel.resetTime };
+}
+
+// 格式化重置时间
+function formatResetTime(resetTime: string): string {
+  try {
+    const reset = new Date(resetTime);
+    const now = new Date();
+    const diff = reset.getTime() - now.getTime();
+
+    if (diff <= 0) return 'Soon';
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (hours > 24) {
+      const days = Math.floor(hours / 24);
+      return `${days}d`;
+    }
+    if (hours > 0) {
+      return `${hours}h`;
+    }
+    return `${minutes}m`;
+  } catch {
+    return '-';
+  }
+}
+
 export function ProviderRow({ provider, stats, streamingCount, onClick }: ProviderRowProps) {
   const isAntigravity = provider.type === 'antigravity';
   const color = isAntigravity ? ANTIGRAVITY_COLOR : getProviderColor(provider.type);
+
+  // 仅为 Antigravity provider 获取额度
+  const { data: quota } = useAntigravityQuota(provider.id, isAntigravity);
+  const claudeInfo = isAntigravity ? getClaudeQuotaInfo(quota) : null;
 
   const getDisplayInfo = () => {
     if (isAntigravity) {
@@ -132,6 +170,43 @@ export function ProviderRow({ provider, stats, streamingCount, onClick }: Provid
           )}
         </div>
       </div>
+
+      {/* Claude Quota (仅 Antigravity) */}
+      {isAntigravity && (
+        <div className="relative z-10 w-24 flex flex-col items-center gap-1 flex-shrink-0">
+          <div className="flex items-center gap-1.5 w-full">
+            <span className="text-[10px] text-text-muted uppercase tracking-wider font-medium">Claude</span>
+            {claudeInfo && (
+              <span className="text-[10px] text-text-muted/70" title="重置时间">
+                ({formatResetTime(claudeInfo.resetTime)})
+              </span>
+            )}
+          </div>
+          {claudeInfo !== null ? (
+            <div className="flex items-center gap-1.5 w-full">
+              <div className="flex-1 h-1.5 bg-surface-hover rounded-full overflow-hidden">
+                <div
+                  className={cn(
+                    "h-full transition-all duration-300",
+                    claudeInfo.percentage >= 50 ? "bg-emerald-400" :
+                    claudeInfo.percentage >= 20 ? "bg-amber-400" : "bg-red-400"
+                  )}
+                  style={{ width: `${claudeInfo.percentage}%` }}
+                />
+              </div>
+              <span className={cn(
+                "text-xs font-mono font-bold min-w-[2.5rem] text-right",
+                claudeInfo.percentage >= 50 ? "text-emerald-400" :
+                claudeInfo.percentage >= 20 ? "text-amber-400" : "text-red-400"
+              )}>
+                {claudeInfo.percentage}%
+              </span>
+            </div>
+          ) : (
+            <span className="text-xs text-text-muted">-</span>
+          )}
+        </div>
+      )}
 
       {/* Provider Stats */}
       <div className="relative z-10 flex items-center gap-2 bg-surface-secondary/30 rounded-lg p-1 border border-border/30">

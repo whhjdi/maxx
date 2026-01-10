@@ -12,6 +12,7 @@ export {
   useDeleteProvider,
   useProviderStats,
   useAllProviderStats,
+  useAntigravityQuota,
 } from './use-providers';
 
 // Project hooks
