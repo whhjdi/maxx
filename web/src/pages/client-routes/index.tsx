@@ -38,7 +38,7 @@ export function ClientRoutesPage() {
   const { data: allRoutes, isLoading: routesLoading } = useRoutes();
   const { data: providers = [], isLoading: providersLoading } = useProviders();
   const { data: providerStats = {} } = useProviderStats(clientType);
-  const { countsByProvider } = useStreamingRequests();
+  const { countsByProviderAndClient } = useStreamingRequests();
 
   const createRoute = useCreateRoute();
   const toggleRoute = useToggleRoute();
@@ -66,7 +66,7 @@ export function ClientRoutesPage() {
 
     const items = providers.map((provider) => {
       const route = clientRoutes.find((r) => Number(r.providerID) === Number(provider.id)) || null;
-      const isNative = provider.supportedClientTypes.includes(clientType as ClientType);
+      const isNative = (provider.supportedClientTypes || []).includes(clientType as ClientType);
       return {
         id: `provider-${provider.id}`,
         provider,
@@ -94,7 +94,7 @@ export function ClientRoutesPage() {
     const clientRoutes = allRoutes?.filter((r) => r.clientType === clientType) || [];
     return providers.filter((p) => {
       const hasRoute = clientRoutes.some((r) => Number(r.providerID) === Number(p.id));
-      const isNative = p.supportedClientTypes.includes(clientType as ClientType);
+      const isNative = (p.supportedClientTypes || []).includes(clientType as ClientType);
       return !isNative && !hasRoute;
     });
   }, [clientType, providers, allRoutes]);
@@ -231,7 +231,7 @@ export function ClientRoutesPage() {
                       item={item}
                       index={index}
                       clientType={clientType as ClientType}
-                      streamingCount={countsByProvider.get(item.provider.id) || 0}
+                      streamingCount={countsByProviderAndClient.get(`${item.provider.id}:${clientType}`) || 0}
                       stats={providerStats[item.provider.id]}
                       isToggling={toggleRoute.isPending || createRoute.isPending}
                       onToggle={() => handleToggle(item)}
@@ -247,7 +247,7 @@ export function ClientRoutesPage() {
                     item={activeItem}
                     index={sortedItems.findIndex((i) => i.id === activeItem.id)}
                     clientType={clientType as ClientType}
-                    streamingCount={countsByProvider.get(activeItem.provider.id) || 0}
+                    streamingCount={countsByProviderAndClient.get(`${activeItem.provider.id}:${clientType}`) || 0}
                     stats={providerStats[activeItem.provider.id]}
                     isToggling={false}
                     isOverlay

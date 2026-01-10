@@ -14,12 +14,16 @@ import {
   Ban,
   Code,
   Database,
-  Info
+  Info,
+  FileInput
 } from 'lucide-react';
 import { statusVariant } from './index';
-import type { ProxyUpstreamAttempt, ClientType } from '@/lib/transport';
+import type { ProxyUpstreamAttempt, ProxyRequest, ClientType } from '@/lib/transport';
 import { cn } from '@/lib/utils';
 import { ClientIcon, getClientName, getClientColor } from '@/components/icons/client-icons';
+
+// Selection type: either the main request or an attempt
+type SelectionType = { type: 'request' } | { type: 'attempt'; attemptId: number };
 
 // 微美元转美元 (1 USD = 1,000,000 microUSD)
 const MICRO_USD_PER_USD = 1_000_000;
@@ -43,24 +47,17 @@ export function RequestDetailPage() {
   const { data: request, isLoading, error } = useProxyRequest(Number(id));
   const { data: attempts } = useProxyUpstreamAttempts(Number(id));
   const { data: providers } = useProviders();
-  const [selectedAttemptId, setSelectedAttemptId] = useState<number | null>(null);
+  const [selection, setSelection] = useState<SelectionType>({ type: 'request' });
   const [activeTab, setActiveTab] = useState<'request' | 'response' | 'metadata'>('request');
 
   useProxyRequestUpdates();
 
   const selectedAttempt = useMemo(() => {
-    if (selectedAttemptId) {
-      return attempts?.find(a => a.id === selectedAttemptId);
+    if (selection.type === 'attempt') {
+      return attempts?.find(a => a.id === selection.attemptId);
     }
-    return attempts?.[0];
-  }, [attempts, selectedAttemptId]);
-
-  // Select the first attempt by default if none selected
-  useMemo(() => {
-     if (!selectedAttemptId && attempts && attempts.length > 0) {
-        setSelectedAttemptId(attempts[0].id);
-     }
-  }, [attempts, selectedAttemptId]);
+    return null;
+  }, [attempts, selection]);
 
 
   // Create lookup map for provider names
@@ -231,33 +228,75 @@ export function RequestDetailPage() {
 
       {/* Main Content - Split View */}
       <div className="flex-1 flex overflow-hidden">
-         {/* Sidebar: Attempts List */}
+         {/* Sidebar: Request & Attempts List */}
          <div className="w-80 flex flex-col border-r border-border bg-surface-primary flex-shrink-0">
-            <div className="h-16 px-4 border-b border-border bg-surface-secondary/50 flex items-center justify-between flex-shrink-0">
+            {/* Request Section */}
+            <div className="flex-shrink-0">
+               <div className="h-10 px-4 border-b border-border bg-surface-secondary/50 flex items-center">
+                  <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-2">
+                    <FileInput size={12} /> Client Request
+                  </span>
+               </div>
+               <button
+                  onClick={() => setSelection({ type: 'request' })}
+                  className={cn(
+                    "w-full text-left p-3.5 transition-all outline-none border-l-[3px] border-b border-border",
+                    selection.type === 'request'
+                      ? "bg-accent/5 border-l-accent"
+                      : "border-l-transparent hover:bg-surface-secondary/50"
+                  )}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      {getStatusIcon(request.status)}
+                      <span className={cn("text-sm font-medium transition-colors", selection.type === 'request' ? "text-text-primary" : "text-text-secondary")}>
+                        {getClientName(request.clientType as ClientType)} Request
+                      </span>
+                    </div>
+                    {request.responseInfo && (
+                      <span className={cn(
+                        "text-[10px] font-mono px-1.5 py-0.5 rounded font-medium",
+                        request.responseInfo.status >= 400 ? "text-red-400 bg-red-400/10" : "text-blue-400 bg-blue-400/10"
+                      )}>
+                        {request.responseInfo.status}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-text-muted">
+                    <span className="truncate max-w-[180px]">{request.requestModel}</span>
+                    <span className="font-mono opacity-70">
+                      {request.duration ? formatDuration(request.duration) : '-'}
+                    </span>
+                  </div>
+                </button>
+            </div>
+
+            {/* Attempts Section */}
+            <div className="h-10 px-4 border-b border-border bg-surface-secondary/50 flex items-center justify-between flex-shrink-0">
                <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-2">
-                 <Server size={12} /> Attempts
+                 <Server size={12} /> Upstream Attempts
                </span>
                <Badge variant="outline" className="text-[10px] h-5 px-1.5">{attempts?.length || 0}</Badge>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto">
                {attempts && attempts.length > 0 ? (
                   <div className="divide-y divide-border">
                     {attempts.map((attempt: ProxyUpstreamAttempt, index: number) => (
                       <button
                         key={attempt.id}
-                        onClick={() => setSelectedAttemptId(attempt.id)}
+                        onClick={() => setSelection({ type: 'attempt', attemptId: attempt.id })}
                         className={cn(
                           "w-full text-left p-3.5 transition-all outline-none border-l-[3px]",
-                          selectedAttempt?.id === attempt.id 
-                            ? "bg-accent/5 border-l-accent" 
+                          selection.type === 'attempt' && selection.attemptId === attempt.id
+                            ? "bg-accent/5 border-l-accent"
                             : "border-l-transparent hover:bg-surface-secondary/50"
                         )}
                       >
                         <div className="flex items-center justify-between mb-1.5">
                           <div className="flex items-center gap-2">
                             {getStatusIcon(attempt.status)}
-                            <span className={cn("text-sm font-medium transition-colors", selectedAttempt?.id === attempt.id ? "text-text-primary" : "text-text-secondary group-hover:text-text-primary")}>
+                            <span className={cn("text-sm font-medium transition-colors", selection.type === 'attempt' && selection.attemptId === attempt.id ? "text-text-primary" : "text-text-secondary group-hover:text-text-primary")}>
                               Attempt {index + 1}
                             </span>
                           </div>
@@ -290,9 +329,18 @@ export function RequestDetailPage() {
             </div>
          </div>
 
-         {/* Main Panel: Selected Attempt Detail */}
+         {/* Main Panel: Selected Detail */}
          <div className="flex-1 flex flex-col bg-background min-w-0">
-            {selectedAttempt ? (
+            {selection.type === 'request' ? (
+               /* Request Detail View */
+               <RequestDetailView
+                  request={request}
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  formatJSON={formatJSON}
+                  formatCost={formatCost}
+               />
+            ) : selectedAttempt ? (
                <>
                  {/* Detail Header */}
                  <div className="h-16 border-b border-border bg-surface-secondary/20 px-6 flex items-center justify-between flex-shrink-0 backdrop-blur-sm sticky top-0 z-10">
@@ -551,5 +599,267 @@ function EmptyState({ message, icon }: { message: string, icon?: React.ReactNode
       {icon || <Server className="h-12 w-12 mb-3 opacity-10" />}
       <p className="text-sm font-medium">{message}</p>
     </div>
+  );
+}
+
+// Request Detail View Component - shows client request/response (Claude format)
+interface RequestDetailViewProps {
+  request: ProxyRequest;
+  activeTab: 'request' | 'response' | 'metadata';
+  setActiveTab: (tab: 'request' | 'response' | 'metadata') => void;
+  formatJSON: (obj: unknown) => string;
+  formatCost: (microUSD: number) => string;
+}
+
+function RequestDetailView({ request, activeTab, setActiveTab, formatJSON, formatCost }: RequestDetailViewProps) {
+  return (
+    <>
+      {/* Detail Header */}
+      <div className="h-16 border-b border-border bg-surface-secondary/20 px-6 flex items-center justify-between flex-shrink-0 backdrop-blur-sm sticky top-0 z-10">
+        <div className="flex items-center gap-4">
+          <div
+            className="w-10 h-10 rounded-lg flex items-center justify-center shadow-sm border border-border"
+            style={{ backgroundColor: `${getClientColor(request.clientType as ClientType)}15` }}
+          >
+            <ClientIcon type={request.clientType as ClientType} size={20} />
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-text-primary">
+              {getClientName(request.clientType as ClientType)} Request
+            </h3>
+            <div className="flex items-center gap-3 text-xs text-text-secondary mt-0.5">
+              <span>Request #{request.id}</span>
+              <span className="text-text-muted">·</span>
+              <span>{request.requestModel}</span>
+              {request.cost > 0 && <span className="text-blue-400 font-medium">Cost: {formatCost(request.cost)}</span>}
+            </div>
+          </div>
+        </div>
+
+        {/* Detail Tabs */}
+        <div className="flex bg-surface-secondary/50 p-1 rounded-lg border border-border">
+          <button
+            onClick={() => setActiveTab('request')}
+            className={cn(
+              "px-4 py-1.5 text-xs font-medium rounded-md transition-all",
+              activeTab === 'request'
+                ? "bg-surface-primary text-text-primary shadow-sm ring-1 ring-border/50"
+                : "text-text-secondary hover:text-text-primary hover:bg-surface-hover/50"
+            )}
+          >
+            Request
+          </button>
+          <button
+            onClick={() => setActiveTab('response')}
+            className={cn(
+              "px-4 py-1.5 text-xs font-medium rounded-md transition-all",
+              activeTab === 'response'
+                ? "bg-surface-primary text-text-primary shadow-sm ring-1 ring-border/50"
+                : "text-text-secondary hover:text-text-primary hover:bg-surface-hover/50"
+            )}
+          >
+            Response
+          </button>
+          <button
+            onClick={() => setActiveTab('metadata')}
+            className={cn(
+              "px-4 py-1.5 text-xs font-medium rounded-md transition-all",
+              activeTab === 'metadata'
+                ? "bg-surface-primary text-text-primary shadow-sm ring-1 ring-border/50"
+                : "text-text-secondary hover:text-text-primary hover:bg-surface-hover/50"
+            )}
+          >
+            Metadata
+          </button>
+        </div>
+      </div>
+
+      {/* Detail Content */}
+      <div className="flex-1 overflow-hidden flex flex-col bg-background relative">
+        {activeTab === 'request' && (
+          request.requestInfo ? (
+            <div className="flex-1 flex flex-col overflow-hidden p-6 gap-6 animate-fade-in">
+              <div className="flex items-center gap-3 p-3 bg-surface-secondary/30 rounded-lg border border-border flex-shrink-0">
+                <Badge variant="info" className="font-mono text-xs">{request.requestInfo.method}</Badge>
+                <code className="flex-1 font-mono text-xs text-text-primary break-all">
+                  {request.requestInfo.url}
+                </code>
+              </div>
+
+              <div className="flex flex-col min-h-0 flex-1 gap-6">
+                <div className="flex flex-col flex-1 min-h-0 gap-3">
+                  <h5 className="text-xs font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-2 flex-shrink-0">
+                    <Code size={14} /> Headers
+                  </h5>
+                  <div className="flex-1 rounded-lg border border-border bg-[#1a1a1a] p-4 overflow-auto shadow-inner relative group">
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Badge variant="outline" className="text-[10px] bg-surface-primary/80 backdrop-blur-sm">JSON</Badge>
+                    </div>
+                    <pre className="text-xs font-mono text-text-secondary leading-relaxed">
+                      {formatJSON(request.requestInfo.headers)}
+                    </pre>
+                  </div>
+                </div>
+
+                {request.requestInfo.body && (
+                  <div className="flex flex-col flex-[2] min-h-0 gap-3">
+                    <h5 className="text-xs font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-2 flex-shrink-0">
+                      <Database size={14} /> Body
+                    </h5>
+                    <div className="flex-1 rounded-lg border border-border bg-[#1a1a1a] p-4 overflow-auto shadow-inner relative group">
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Badge variant="outline" className="text-[10px] bg-surface-primary/80 backdrop-blur-sm">JSON</Badge>
+                      </div>
+                      <pre className="text-xs font-mono text-text-primary whitespace-pre-wrap leading-relaxed">
+                        {(() => {
+                          try {
+                            return formatJSON(JSON.parse(request.requestInfo.body));
+                          } catch {
+                            return request.requestInfo.body;
+                          }
+                        })()}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <EmptyState message="No request data available" />
+          )
+        )}
+
+        {activeTab === 'response' && (
+          request.responseInfo ? (
+            <div className="flex-1 flex flex-col overflow-hidden p-6 gap-6 animate-fade-in">
+              <div className="flex items-center gap-3 p-3 bg-surface-secondary/30 rounded-lg border border-border flex-shrink-0">
+                <div className={cn(
+                  "px-2 py-1 rounded text-xs font-bold font-mono",
+                  request.responseInfo.status >= 400 ? "bg-red-400/10 text-red-400" : "bg-blue-400/10 text-blue-400"
+                )}>
+                  {request.responseInfo.status}
+                </div>
+                <span className="text-sm text-text-secondary font-medium">Response Status</span>
+              </div>
+
+              <div className="flex flex-col min-h-0 flex-1 gap-6">
+                <div className="flex flex-col flex-1 min-h-0 gap-3">
+                  <h5 className="text-xs font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-2 flex-shrink-0">
+                    <Code size={14} /> Headers
+                  </h5>
+                  <div className="flex-1 rounded-lg border border-border bg-[#1a1a1a] p-4 overflow-auto shadow-inner relative group">
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Badge variant="outline" className="text-[10px] bg-surface-primary/80 backdrop-blur-sm">JSON</Badge>
+                    </div>
+                    <pre className="text-xs font-mono text-text-secondary leading-relaxed">
+                      {formatJSON(request.responseInfo.headers)}
+                    </pre>
+                  </div>
+                </div>
+
+                {request.responseInfo.body && (
+                  <div className="flex flex-col flex-[2] min-h-0 gap-3">
+                    <h5 className="text-xs font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-2 flex-shrink-0">
+                      <Database size={14} /> Body
+                    </h5>
+                    <div className="flex-1 rounded-lg border border-border bg-[#1a1a1a] p-4 overflow-auto shadow-inner relative group">
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Badge variant="outline" className="text-[10px] bg-surface-primary/80 backdrop-blur-sm">JSON</Badge>
+                      </div>
+                      <pre className="text-xs font-mono text-text-primary whitespace-pre-wrap leading-relaxed">
+                        {(() => {
+                          try {
+                            return formatJSON(JSON.parse(request.responseInfo.body));
+                          } catch {
+                            return request.responseInfo.body;
+                          }
+                        })()}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <EmptyState message="No response data available" />
+          )
+        )}
+
+        {activeTab === 'metadata' && (
+          <div className="flex-1 overflow-y-auto p-6 animate-fade-in">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <Card className="bg-surface-primary border-border">
+                <CardHeader className="pb-2 border-b border-border/50">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Info size={16} className="text-info"/> Request Info
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                    <dt className="text-xs font-medium text-text-secondary uppercase tracking-wider">Request ID</dt>
+                    <dd className="sm:col-span-2 font-mono text-xs text-text-primary bg-surface-secondary px-2 py-1 rounded select-all break-all">{request.requestID || '-'}</dd>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                    <dt className="text-xs font-medium text-text-secondary uppercase tracking-wider">Session ID</dt>
+                    <dd className="sm:col-span-2 font-mono text-xs text-text-primary bg-surface-secondary px-2 py-1 rounded select-all break-all">{request.sessionID || '-'}</dd>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                    <dt className="text-xs font-medium text-text-secondary uppercase tracking-wider">Instance ID</dt>
+                    <dd className="sm:col-span-2 font-mono text-xs text-text-primary bg-surface-secondary px-2 py-1 rounded select-all break-all">{request.instanceID || '-'}</dd>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                    <dt className="text-xs font-medium text-text-secondary uppercase tracking-wider">Request Model</dt>
+                    <dd className="sm:col-span-2 font-mono text-xs text-text-primary bg-surface-secondary px-2 py-1 rounded">{request.requestModel || '-'}</dd>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                    <dt className="text-xs font-medium text-text-secondary uppercase tracking-wider">Response Model</dt>
+                    <dd className="sm:col-span-2 font-mono text-xs text-text-primary bg-surface-secondary px-2 py-1 rounded">{request.responseModel || '-'}</dd>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-surface-primary border-border">
+                <CardHeader className="pb-2 border-b border-border/50">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Zap size={16} className="text-warning"/> Usage & Cache
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4 space-y-4">
+                  <div className="flex justify-between items-center border-b border-border/30 pb-2">
+                    <dt className="text-xs font-medium text-text-secondary uppercase tracking-wider">Input Tokens</dt>
+                    <dd className="text-sm text-text-primary font-mono font-medium">{request.inputTokenCount.toLocaleString()}</dd>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-border/30 pb-2">
+                    <dt className="text-xs font-medium text-text-secondary uppercase tracking-wider">Output Tokens</dt>
+                    <dd className="text-sm text-text-primary font-mono font-medium">{request.outputTokenCount.toLocaleString()}</dd>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-border/30 pb-2">
+                    <dt className="text-xs font-medium text-text-secondary uppercase tracking-wider">Cache Read</dt>
+                    <dd className="text-sm text-violet-400 font-mono font-medium">{request.cacheReadCount.toLocaleString()}</dd>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-border/30 pb-2">
+                    <dt className="text-xs font-medium text-text-secondary uppercase tracking-wider">Cache Write</dt>
+                    <dd className="text-sm text-amber-400 font-mono font-medium">{request.cacheWriteCount.toLocaleString()}</dd>
+                  </div>
+                  {(request.cache5mWriteCount > 0 || request.cache1hWriteCount > 0) && (
+                    <div className="flex justify-between items-center border-b border-border/30 pb-2 pl-4">
+                      <dt className="text-xs font-medium text-text-secondary/70 tracking-wider">
+                        <span className="text-cyan-400/80">5m:</span> {request.cache5mWriteCount}
+                        <span className="mx-2">|</span>
+                        <span className="text-orange-400/80">1h:</span> {request.cache1hWriteCount}
+                      </dt>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center">
+                    <dt className="text-xs font-medium text-text-secondary uppercase tracking-wider">Cost</dt>
+                    <dd className="text-sm text-blue-400 font-mono font-medium">{formatCost(request.cost)}</dd>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 }

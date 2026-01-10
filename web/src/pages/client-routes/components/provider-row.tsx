@@ -151,6 +151,14 @@ export function ProviderRowContent({
           style={{ backgroundColor: `${color}25` }}
         />
       )}
+
+      {/* Streaming Badge - 右上角 */}
+      {enabled && streamingCount > 0 && (
+        <div className="absolute -top-1 -right-1 z-20">
+          <StreamingBadge count={streamingCount} color={color} />
+        </div>
+      )}
+
       {/* Drag Handle */}
       <div className={`relative z-10 flex flex-col items-center gap-1 w-6 ${enabled ? '' : 'opacity-40'}`}>
         <GripVertical size={14} className="text-text-muted" />
@@ -167,11 +175,6 @@ export function ProviderRowContent({
         style={{ backgroundColor: `${color}15`, color }}
       >
         <span className="text-lg font-bold">{provider.name.charAt(0).toUpperCase()}</span>
-        {enabled && (
-          <div className="absolute -top-2 -right-2">
-            <StreamingBadge count={streamingCount} color={color} className="scale-90" />
-          </div>
-        )}
       </div>
 
       {/* Provider Info */}

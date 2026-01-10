@@ -22,6 +22,10 @@ export default defineConfig({
         target: 'http://localhost:9880',
         changeOrigin: true,
       },
+      '/antigravity': {
+        target: 'http://localhost:9880',
+        changeOrigin: true,
+      },
       '/ws': {
         target: 'http://localhost:9880',
         ws: true,

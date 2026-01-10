@@ -17,6 +17,8 @@ export interface StreamingState {
   countsByClient: Map<ClientType, number>;
   /** 按 providerID 统计的活动请求数 */
   countsByProvider: Map<number, number>;
+  /** 按 providerID + clientType 组合统计的活动请求数 (key: `${providerID}:${clientType}`) */
+  countsByProviderAndClient: Map<string, number>;
 }
 
 /**
@@ -64,6 +66,7 @@ export function useStreamingRequests(): StreamingState {
   // 计算按 clientType 和 providerID 的统计
   const countsByClient = new Map<ClientType, number>();
   const countsByProvider = new Map<number, number>();
+  const countsByProviderAndClient = new Map<string, number>();
 
   for (const request of activeRequests.values()) {
     // 按 clientType 统计
@@ -74,6 +77,11 @@ export function useStreamingRequests(): StreamingState {
     if (request.providerID > 0) {
       const providerCount = countsByProvider.get(request.providerID) || 0;
       countsByProvider.set(request.providerID, providerCount + 1);
+
+      // 按 providerID + clientType 组合统计
+      const key = `${request.providerID}:${request.clientType}`;
+      const combinedCount = countsByProviderAndClient.get(key) || 0;
+      countsByProviderAndClient.set(key, combinedCount + 1);
     }
   }
 
@@ -82,6 +90,7 @@ export function useStreamingRequests(): StreamingState {
     requests: Array.from(activeRequests.values()),
     countsByClient,
     countsByProvider,
+    countsByProviderAndClient,
   };
 }
 
@@ -99,4 +108,12 @@ export function useClientStreamingCount(clientType: ClientType): number {
 export function useProviderStreamingCount(providerId: number): number {
   const { countsByProvider } = useStreamingRequests();
   return countsByProvider.get(providerId) || 0;
+}
+
+/**
+ * 获取特定 Provider 在特定 ClientType 下的 streaming 请求数
+ */
+export function useProviderClientStreamingCount(providerId: number, clientType: ClientType): number {
+  const { countsByProviderAndClient } = useStreamingRequests();
+  return countsByProviderAndClient.get(`${providerId}:${clientType}`) || 0;
 }
