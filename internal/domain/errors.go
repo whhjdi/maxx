@@ -3,6 +3,7 @@ package domain
 import (
     "errors"
     "fmt"
+    "time"
 )
 
 var (
@@ -20,9 +21,10 @@ var (
 
 // ProxyError represents an error during proxy execution
 type ProxyError struct {
-    Err       error
-    Retryable bool
-    Message   string
+    Err        error
+    Retryable  bool
+    Message    string
+    RetryAfter time.Duration // Suggested retry delay (from 429 responses)
 }
 
 func (e *ProxyError) Error() string {

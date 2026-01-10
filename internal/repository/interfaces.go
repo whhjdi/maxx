@@ -73,3 +73,14 @@ type SystemSettingRepository interface {
 	GetAll() ([]*domain.SystemSetting, error)
 	Delete(key string) error
 }
+
+type AntigravityQuotaRepository interface {
+	// Upsert 更新或插入配额（基于邮箱）
+	Upsert(quota *domain.AntigravityQuota) error
+	// GetByEmail 根据邮箱获取配额
+	GetByEmail(email string) (*domain.AntigravityQuota, error)
+	// List 获取所有配额
+	List() ([]*domain.AntigravityQuota, error)
+	// Delete 删除配额
+	Delete(email string) error
+}

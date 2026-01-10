@@ -177,6 +177,26 @@ func (d *DB) migrate() error {
 	d.db.Exec("ALTER TABLE proxy_requests ADD COLUMN is_stream INTEGER DEFAULT 0")
 	d.db.Exec("ALTER TABLE proxy_upstream_attempts ADD COLUMN is_stream INTEGER DEFAULT 0")
 
+	// Migration: add antigravity_quotas table for quota storage by email
+	d.db.Exec(`
+		CREATE TABLE IF NOT EXISTS antigravity_quotas (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			email TEXT NOT NULL UNIQUE,
+			subscription_tier TEXT DEFAULT 'FREE',
+			is_forbidden INTEGER DEFAULT 0,
+			models TEXT,
+			last_updated INTEGER DEFAULT 0
+		)
+	`)
+	d.db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_antigravity_quotas_email ON antigravity_quotas(email)")
+
+	// Migration: add user info columns to antigravity_quotas
+	d.db.Exec("ALTER TABLE antigravity_quotas ADD COLUMN name TEXT DEFAULT ''")
+	d.db.Exec("ALTER TABLE antigravity_quotas ADD COLUMN picture TEXT DEFAULT ''")
+	d.db.Exec("ALTER TABLE antigravity_quotas ADD COLUMN project_id TEXT DEFAULT ''")
+
 	return nil
 }
 

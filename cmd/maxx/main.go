@@ -67,6 +67,7 @@ func main() {
 	proxyRequestRepo := sqlite.NewProxyRequestRepository(db)
 	attemptRepo := sqlite.NewProxyUpstreamAttemptRepository(db)
 	settingRepo := sqlite.NewSystemSettingRepository(db)
+	antigravityQuotaRepo := sqlite.NewAntigravityQuotaRepository(db)
 
 	// Generate instance ID and mark stale requests as failed
 	instanceID := generateInstanceID()
@@ -136,12 +137,16 @@ func main() {
 	// Create handlers
 	proxyHandler := handler.NewProxyHandler(clientAdapter, exec, cachedSessionRepo)
 	adminHandler := handler.NewAdminHandler(adminService)
+	antigravityHandler := handler.NewAntigravityHandler(adminService, antigravityQuotaRepo)
 
 	// Setup routes
 	mux := http.NewServeMux()
 
 	// Admin API routes
 	mux.Handle("/admin/", adminHandler)
+
+	// Antigravity API routes
+	mux.Handle("/antigravity/", antigravityHandler)
 
 	// Proxy routes - catch all AI API endpoints
 	// Claude API

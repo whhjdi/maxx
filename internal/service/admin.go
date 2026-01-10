@@ -71,6 +71,9 @@ func (s *AdminService) GetProvider(id uint64) (*domain.Provider, error) {
 }
 
 func (s *AdminService) CreateProvider(provider *domain.Provider) error {
+	// Auto-set SupportedClientTypes based on provider type
+	s.autoSetSupportedClientTypes(provider)
+
 	if err := s.providerRepo.Create(provider); err != nil {
 		return err
 	}
@@ -84,6 +87,9 @@ func (s *AdminService) CreateProvider(provider *domain.Provider) error {
 }
 
 func (s *AdminService) UpdateProvider(provider *domain.Provider) error {
+	// Auto-set SupportedClientTypes based on provider type
+	s.autoSetSupportedClientTypes(provider)
+
 	// Get old provider to compare supportedClientTypes
 	var oldSupportedClientTypes []domain.ClientType
 	if oldProvider, err := s.providerRepo.GetByID(provider.ID); err == nil && oldProvider != nil {
@@ -304,6 +310,25 @@ func (s *AdminService) GetLogs(limit int) (*LogsResult, error) {
 }
 
 // ===== Private helpers =====
+
+// autoSetSupportedClientTypes sets SupportedClientTypes based on provider type
+func (s *AdminService) autoSetSupportedClientTypes(provider *domain.Provider) {
+	switch provider.Type {
+	case "antigravity":
+		// Antigravity natively supports Claude, OpenAI, and Gemini
+		provider.SupportedClientTypes = []domain.ClientType{
+			domain.ClientTypeClaude,
+			domain.ClientTypeOpenAI,
+			domain.ClientTypeGemini,
+		}
+	case "custom":
+		// Custom providers use their configured SupportedClientTypes
+		// If not set, default to OpenAI
+		if len(provider.SupportedClientTypes) == 0 {
+			provider.SupportedClientTypes = []domain.ClientType{domain.ClientTypeOpenAI}
+		}
+	}
+}
 
 func (s *AdminService) syncProviderRoutes(provider *domain.Provider, oldProvider *domain.Provider) {
 	var oldClientTypes []domain.ClientType
