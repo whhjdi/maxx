@@ -42,6 +42,20 @@ func (h *ProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Claude Desktop / Anthropic compatibility: count_tokens placeholder (aligned with Antigravity-Manager when z.ai passthrough is disabled)
+	if r.URL.Path == "/v1/messages/count_tokens" {
+		_, _ = io.Copy(io.Discard, r.Body)
+		_ = r.Body.Close()
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"input_tokens":  0,
+			"output_tokens": 0,
+		})
+		return
+	}
+
 	// Read body
 	body, err := io.ReadAll(r.Body)
 	if err != nil {

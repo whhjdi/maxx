@@ -315,7 +315,7 @@ func processContentsForSignatures(contents []interface{}, sessionID string, mapp
 				}
 
 				// [NEW] Check model compatibility for existing signature
-				if HasValidSignature(existingSig) {
+				if hasValidThinkingSignature(text, existingSig) {
 					if cachedFamily := cache.GetSignatureFamily(existingSig); cachedFamily != "" {
 						if !IsModelCompatible(cachedFamily, mappedModel) {
 							// Incompatible signature - downgrade to text
@@ -384,11 +384,11 @@ func processContentsForSignatures(contents []interface{}, sessionID string, mapp
 			}
 		}
 
-		// Filter out unsigned thinking blocks
-		var filteredParts []interface{}
-		for _, part := range parts {
-			partMap, ok := part.(map[string]interface{})
-			if !ok {
+			// Filter out unsigned thinking blocks
+			var filteredParts []interface{}
+			for _, part := range parts {
+				partMap, ok := part.(map[string]interface{})
+				if !ok {
 				filteredParts = append(filteredParts, part)
 				continue
 			}
@@ -400,13 +400,14 @@ func processContentsForSignatures(contents []interface{}, sessionID string, mapp
 				continue
 			}
 
-			// For thinking parts, only keep if they have valid signature
-			sig, _ := partMap["thoughtSignature"].(string)
-			if HasValidSignature(sig) {
-				filteredParts = append(filteredParts, part)
+				// For thinking parts, only keep if they have valid signature
+				text, _ := partMap["text"].(string)
+				sig, _ := partMap["thoughtSignature"].(string)
+				if hasValidThinkingSignature(text, sig) {
+					filteredParts = append(filteredParts, part)
+				}
+				// Drop unsigned thinking blocks (they break API validation)
 			}
-			// Drop unsigned thinking blocks (they break API validation)
-		}
 
 		if len(filteredParts) != len(parts) {
 			contentMap["parts"] = filteredParts

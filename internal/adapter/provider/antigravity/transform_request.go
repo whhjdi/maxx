@@ -34,17 +34,20 @@ func TransformClaudeToGemini(
 		mappedModel = "gemini-2.5-flash"
 	}
 
-	// 4. Calculate final thinking mode state (before building request)
+	// 4. Thinking block pre-filtering
+	filterInvalidThinkingBlocks(&claudeReq.Messages)
+
+	// 5. Tool loop recovery
+	closeToolLoopForThinking(&claudeReq.Messages)
+
+	// 6. Remove trailing unsigned thinking blocks (like Antigravity-Manager)
+	removeTrailingUnsignedThinking(&claudeReq.Messages)
+
+	// 7. Calculate final thinking mode state (before building request)
 	// Reference: Antigravity-Manager's thinking mode resolution (line 170-251)
 	hasThinking := calculateFinalThinkingState(&claudeReq, mappedModel, signatureCache)
 
-	// 5. Thinking block pre-filtering
-	filterInvalidThinkingBlocks(&claudeReq.Messages)
-
-	// 6. Tool loop recovery
-	closeToolLoopForThinking(&claudeReq.Messages)
-
-	// 7. Build Gemini request
+	// 8. Build Gemini request
 	geminiReq := make(map[string]interface{})
 
 	// 7.1 System instruction
@@ -106,7 +109,7 @@ type ClaudeMessage struct {
 
 // ContentBlock represents a content block in Claude format
 type ContentBlock struct {
-	Type         string                 `json:"type"` // "text", "thinking", "redacted_thinking", "tool_use", "tool_result", "image"
+	Type         string                 `json:"type"` // "text", "thinking", "redacted_thinking", "tool_use", "tool_result", "image", "document"
 	Text         string                 `json:"text,omitempty"`
 	Thinking     string                 `json:"thinking,omitempty"`
 	Data         string                 `json:"data,omitempty"`         // for redacted_thinking
@@ -189,28 +192,96 @@ func cleanCacheControlFromRequest(claudeReq *ClaudeRequest) {
 	}
 }
 
-// filterInvalidThinkingBlocks removes thinking blocks without signature or content
-// Reference: Antigravity-Manager's filter_invalid_thinking_blocks
+func hasValidThinkingSignature(thinkingText, signature string) bool {
+	// Empty thinking + any signature = valid (trailing signature case)
+	if thinkingText == "" && signature != "" {
+		return true
+	}
+	// Non-empty thinking must have a "long enough" signature
+	return signature != "" && len(signature) >= MinThinkingSignatureLength
+}
+
+// filterInvalidThinkingBlocks filters invalid thinking blocks from message history.
+// Mirrors Antigravity-Manager's `filter_invalid_thinking_blocks` behavior:
+// - Only touches assistant/model roles
+// - Invalid thinking blocks are converted to text (preserve content) or dropped if empty
+// - Ensures message content is not empty (injects an empty text block)
 func filterInvalidThinkingBlocks(messages *[]ClaudeMessage) {
 	for i := range *messages {
+		role := (*messages)[i].Role
+		if role != "assistant" && role != "model" {
+			continue
+		}
+
 		blocks := parseContentBlocks((*messages)[i].Content)
 		if blocks == nil {
 			continue
 		}
 
-		filtered := []ContentBlock{}
+		filtered := make([]ContentBlock, 0, len(blocks))
 		for _, block := range blocks {
-			if block.Type == "thinking" {
-				// Keep if: has signature OR has content
-				if block.Signature != "" || block.Thinking != "" {
-					filtered = append(filtered, block)
-				}
-			} else {
+			if block.Type != "thinking" {
 				filtered = append(filtered, block)
+				continue
+			}
+
+			if hasValidThinkingSignature(block.Thinking, block.Signature) {
+				// Sanitize: cache_control should not be forwarded
+				block.CacheControl = nil
+				filtered = append(filtered, block)
+				continue
+			}
+
+			// Invalid signature: preserve content by downgrading to text (Manager behavior)
+			if strings.TrimSpace(block.Thinking) != "" {
+				filtered = append(filtered, ContentBlock{
+					Type: "text",
+					Text: block.Thinking,
+				})
 			}
 		}
 
+		if len(filtered) == 0 {
+			filtered = append(filtered, ContentBlock{
+				Type: "text",
+				Text: "",
+			})
+		}
+
 		(*messages)[i].Content = filtered
+	}
+}
+
+// removeTrailingUnsignedThinking removes trailing thinking blocks without valid signatures from assistant/model messages.
+// Mirrors Antigravity-Manager's `remove_trailing_unsigned_thinking`.
+func removeTrailingUnsignedThinking(messages *[]ClaudeMessage) {
+	for i := range *messages {
+		role := (*messages)[i].Role
+		if role != "assistant" && role != "model" {
+			continue
+		}
+
+		blocks := parseContentBlocks((*messages)[i].Content)
+		if blocks == nil || len(blocks) == 0 {
+			continue
+		}
+
+		endIndex := len(blocks)
+		for j := len(blocks) - 1; j >= 0; j-- {
+			if blocks[j].Type != "thinking" {
+				break
+			}
+			if !hasValidThinkingSignature(blocks[j].Thinking, blocks[j].Signature) {
+				endIndex = j
+				continue
+			}
+			break
+		}
+
+		if endIndex < len(blocks) {
+			blocks = blocks[:endIndex]
+			(*messages)[i].Content = blocks
+		}
 	}
 }
 
@@ -533,4 +604,3 @@ func hasFunctionCallsInMessages(messages []ClaudeMessage) bool {
 
 	return false
 }
-

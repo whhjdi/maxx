@@ -43,8 +43,13 @@ const (
 	SignatureTextHashLen = 16
 
 	// MinSignatureLength is the minimum length for a valid thought signature
-	// [Aligned with Antigravity-Manager] Uses 50 to match reference implementation
+	// [Aligned with Antigravity-Manager/src-tauri/src/proxy/signature_cache.rs]
 	MinSignatureLength = 50
+
+	// MinThinkingSignatureLength is the minimum length treated as a "valid" thinking signature
+	// when filtering/cleaning Claude history.
+	// [Aligned with Antigravity-Manager/src-tauri/src/proxy/handlers/claude.rs]
+	MinThinkingSignatureLength = 10
 
 	// SkipSignatureValidator is the sentinel value to bypass signature validation
 	// Used when no valid signature is available for tool calls

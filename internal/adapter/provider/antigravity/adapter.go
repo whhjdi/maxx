@@ -2,7 +2,6 @@ package antigravity
 
 import (
 	"bytes"
-	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -58,12 +57,14 @@ func (a *AntigravityAdapter) Execute(ctx context.Context, w http.ResponseWriter,
 	mappedModel := ctxutil.GetMappedModel(ctx)   // Mapped model after route resolution
 	requestBody := ctxutil.GetRequestBody(ctx)
 	backgroundDowngrade := false
+	backgroundModel := ""
 
 	// Background task downgrade (like Manager) - only for Claude clients
 	if clientType == domain.ClientTypeClaude {
-		if isBg, newBody := detectBackgroundTask(requestBody); isBg {
+		if isBg, forcedModel, newBody := detectBackgroundTask(requestBody); isBg {
 			requestBody = newBody
-			mappedModel = "gemini-2.5-flash"
+			mappedModel = forcedModel
+			backgroundModel = forcedModel
 			backgroundDowngrade = true
 		}
 	}
@@ -86,8 +87,8 @@ func (a *AntigravityAdapter) Execute(ctx context.Context, w http.ResponseWriter,
 				}
 				mappedModel = MapClaudeModelToGeminiWithConfig(requestModel, haikuTarget)
 			}
-			if backgroundDowngrade {
-				mappedModel = "gemini-2.5-flash"
+			if backgroundDowngrade && backgroundModel != "" {
+				mappedModel = backgroundModel
 			}
 			// If route provided a different mappedModel, trust it and don't re-map
 			// (user/route has explicitly configured the target model)
@@ -96,8 +97,8 @@ func (a *AntigravityAdapter) Execute(ctx context.Context, w http.ResponseWriter,
 			stream := ctxutil.GetIsStream(ctx)
 			clientWantsStream := stream
 			actualStream := stream
-			if !clientWantsStream {
-				// Auto-convert non-stream to stream internally for better quota (like Manager)
+			if clientType == domain.ClientTypeClaude && !clientWantsStream {
+				// Auto-convert Claude non-stream to stream internally for better quota (like Manager)
 				actualStream = true
 			}
 
@@ -685,84 +686,66 @@ func (a *AntigravityAdapter) handleCollectedStreamResponse(ctx context.Context, 
 		}
 	}
 
-	var sseBuffer strings.Builder
+	// Copy upstream headers (except those we override)
+	copyResponseHeaders(w.Header(), resp.Header)
+
+	isClaudeClient := clientType == domain.ClientTypeClaude
+	var claudeState *ClaudeStreamingState
+	var claudeSSE strings.Builder
+	if isClaudeClient {
+		// Extract sessionID for signature caching (like CLIProxyAPI)
+		requestBody := ctxutil.GetRequestBody(ctx)
+		sessionID := extractSessionID(requestBody)
+		claudeState = NewClaudeStreamingStateWithSession(sessionID, requestModel)
+	}
+
+	// Collect upstream SSE for attempt/debug, and (for Claude) collect converted Claude SSE for JSON reconstruction.
+	var upstreamSSE strings.Builder
 	var lastPayload []byte
-	var aggregatedParts []GeminiPart
-	var aggregatedUsage *GeminiUsageMetadata
-	var aggregatedModelVersion string
-	var aggregatedResponseID string
-	var aggregatedFinish string
-	var aggregatedGrounding *GeminiGroundingMetadata
-	// Track tool signatures for reconstruction
-	var lastSignature string
+	var responseBody []byte
 
-	reader := bufio.NewReader(resp.Body)
+	var lineBuffer bytes.Buffer
+	buf := make([]byte, 4096)
+
 	for {
-		line, err := reader.ReadString('\n')
-		if len(line) > 0 {
-			sseBuffer.WriteString(line)
+		// Check context before reading
+		select {
+		case <-ctx.Done():
+			return domain.NewProxyErrorWithMessage(ctx.Err(), false, "client disconnected")
+		default:
+		}
 
-			unwrapped := unwrapV1InternalSSEChunk([]byte(line))
-			if len(unwrapped) == 0 {
-				if err == io.EOF {
+		n, err := resp.Body.Read(buf)
+		if n > 0 {
+			lineBuffer.Write(buf[:n])
+
+			for {
+				line, readErr := lineBuffer.ReadString('\n')
+				if readErr != nil {
+					lineBuffer.WriteString(line)
 					break
 				}
-				if err != nil && err != io.EOF {
-					return domain.NewProxyErrorWithMessage(domain.ErrUpstreamError, true, "failed to read upstream stream")
-				}
-				continue
-			}
 
-			lineStr := strings.TrimSpace(string(unwrapped))
-			if !strings.HasPrefix(lineStr, "data: ") {
-				if err == io.EOF {
-					break
-				}
-				if err != nil && err != io.EOF {
-					return domain.NewProxyErrorWithMessage(domain.ErrUpstreamError, true, "failed to read upstream stream")
-				}
-				continue
-			}
+				upstreamSSE.WriteString(line)
 
-			dataStr := strings.TrimSpace(strings.TrimPrefix(lineStr, "data: "))
-			if dataStr == "" || dataStr == "[DONE]" {
-				if err == io.EOF {
-					break
+				unwrappedLine := unwrapV1InternalSSEChunk([]byte(line))
+				if len(unwrappedLine) == 0 {
+					continue
 				}
-				if err != nil && err != io.EOF {
-					return domain.NewProxyErrorWithMessage(domain.ErrUpstreamError, true, "failed to read upstream stream")
-				}
-				continue
-			}
 
-			lastPayload = []byte(dataStr)
-
-			// Aggregate Gemini stream chunk for final reconstruction
-			var chunk GeminiStreamChunk
-			if unmarshalErr := json.Unmarshal([]byte(dataStr), &chunk); unmarshalErr == nil {
-				if chunk.ModelVersion != "" {
-					aggregatedModelVersion = chunk.ModelVersion
-				}
-				if chunk.ResponseID != "" {
-					aggregatedResponseID = chunk.ResponseID
-				}
-				if chunk.UsageMetadata != nil {
-					aggregatedUsage = chunk.UsageMetadata
-				}
-				if len(chunk.Candidates) > 0 {
-					cand := chunk.Candidates[0]
-					// Capture signature from thought for later tool_use
-					for _, p := range cand.Content.Parts {
-						if p.ThoughtSignature != "" {
-							lastSignature = p.ThoughtSignature
-						}
+				// Track last Gemini payload for non-Claude responses (best-effort)
+				lineStr := strings.TrimSpace(string(unwrappedLine))
+				if strings.HasPrefix(lineStr, "data: ") {
+					dataStr := strings.TrimSpace(strings.TrimPrefix(lineStr, "data: "))
+					if dataStr != "" && dataStr != "[DONE]" {
+						lastPayload = []byte(dataStr)
 					}
-					aggregatedParts = append(aggregatedParts, cand.Content.Parts...)
-					if cand.FinishReason != "" {
-						aggregatedFinish = cand.FinishReason
-					}
-					if cand.GroundingMetadata != nil {
-						aggregatedGrounding = cand.GroundingMetadata
+				}
+
+				if isClaudeClient && claudeState != nil {
+					out := claudeState.ProcessGeminiSSELine(string(unwrappedLine))
+					if len(out) > 0 {
+						claudeSSE.Write(out)
 					}
 				}
 			}
@@ -776,12 +759,27 @@ func (a *AntigravityAdapter) handleCollectedStreamResponse(ctx context.Context, 
 		}
 	}
 
+	// Ensure Claude clients get termination events
+	if isClaudeClient && claudeState != nil {
+		if forceStop := claudeState.EmitForceStop(); len(forceStop) > 0 {
+			claudeSSE.Write(forceStop)
+		}
+	}
+
 	// Update attempt with collected body and token usage
 	if attempt != nil {
 		if attempt.ResponseInfo != nil {
-			attempt.ResponseInfo.Body = sseBuffer.String()
+			if isClaudeClient {
+				attempt.ResponseInfo.Body = claudeSSE.String()
+			} else {
+				attempt.ResponseInfo.Body = upstreamSSE.String()
+			}
 		}
-		if metrics := usage.ExtractFromStreamContent(sseBuffer.String()); metrics != nil {
+		metricsSource := upstreamSSE.String()
+		if isClaudeClient {
+			metricsSource = claudeSSE.String()
+		}
+		if metrics := usage.ExtractFromStreamContent(metricsSource); metrics != nil {
 			attempt.InputTokenCount = metrics.InputTokens
 			attempt.OutputTokenCount = metrics.OutputTokens
 			attempt.CacheReadCount = metrics.CacheReadCount
@@ -794,55 +792,29 @@ func (a *AntigravityAdapter) handleCollectedStreamResponse(ctx context.Context, 
 		}
 	}
 
-	if len(lastPayload) == 0 {
-		return domain.NewProxyErrorWithMessage(domain.ErrUpstreamError, true, "empty upstream stream response")
+	if isClaudeClient {
+		if claudeSSE.Len() == 0 {
+			return domain.NewProxyErrorWithMessage(domain.ErrUpstreamError, true, "empty upstream stream response")
+		}
+		collected, collectErr := collectClaudeSSEToJSON(claudeSSE.String())
+		if collectErr != nil {
+			return domain.NewProxyErrorWithMessage(domain.ErrFormatConversion, false, "failed to collect streamed response")
+		}
+		responseBody = collected
+	} else {
+		if len(lastPayload) == 0 {
+			return domain.NewProxyErrorWithMessage(domain.ErrUpstreamError, true, "empty upstream stream response")
+		}
+		switch clientType {
+		case domain.ClientTypeGemini:
+			responseBody = lastPayload
+		case domain.ClientTypeOpenAI:
+			return domain.NewProxyErrorWithMessage(domain.ErrFormatConversion, false, "OpenAI response transformation not yet implemented")
+		default:
+			responseBody = lastPayload
+		}
 	}
 
-	var responseBody []byte
-	var err error
-
-	switch clientType {
-	case domain.ClientTypeClaude:
-		// Reconstruct a synthetic Gemini response from aggregated parts
-		// Attach trailing signature to tool_use if missing
-		for i := range aggregatedParts {
-			if aggregatedParts[i].FunctionCall != nil {
-				if aggregatedParts[i].ThoughtSignature == "" && lastSignature != "" {
-					aggregatedParts[i].ThoughtSignature = lastSignature
-				}
-			}
-		}
-		synthetic := map[string]interface{}{
-			"candidates": []map[string]interface{}{
-				{
-					"content": map[string]interface{}{
-						"parts": aggregatedParts,
-					},
-					"finishReason":      aggregatedFinish,
-					"groundingMetadata": aggregatedGrounding,
-				},
-			},
-			"usageMetadata": aggregatedUsage,
-			"modelVersion":  aggregatedModelVersion,
-			"responseId":    aggregatedResponseID,
-		}
-		if aggregatedGrounding == nil {
-			delete(synthetic["candidates"].([]map[string]interface{})[0], "groundingMetadata")
-		}
-		synthBytes, _ := json.Marshal(synthetic)
-		responseBody, err = convertGeminiToClaudeResponse(synthBytes, requestModel)
-		if err != nil {
-			return domain.NewProxyErrorWithMessage(domain.ErrFormatConversion, false, "failed to transform streamed response")
-		}
-	case domain.ClientTypeGemini:
-		responseBody = lastPayload
-	case domain.ClientTypeOpenAI:
-		return domain.NewProxyErrorWithMessage(domain.ErrFormatConversion, false, "OpenAI response transformation not yet implemented")
-	default:
-		responseBody = lastPayload
-	}
-
-	copyResponseHeaders(w.Header(), resp.Header)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	_, _ = w.Write(responseBody)

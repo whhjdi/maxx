@@ -64,8 +64,13 @@ func buildContents(
 				parts = append(parts, part)
 
 			case "image":
-				part := processImageBlock(block)
-				parts = append(parts, part)
+				if part := processInlineDataBlock(block); part != nil {
+					parts = append(parts, part)
+				}
+			case "document":
+				if part := processInlineDataBlock(block); part != nil {
+					parts = append(parts, part)
+				}
 			}
 		}
 
@@ -134,11 +139,11 @@ func processThinkingBlock(
 			signatureCache.CacheThinkingFamily(signature, mappedModel)
 		}
 
-		// Valid signature
-		if HasValidSignature(signature) {
-			part["thoughtSignature"] = signature
+			// Valid signature (thinking threshold)
+			if hasValidThinkingSignature(block.Thinking, signature) {
+				part["thoughtSignature"] = signature
+			}
 		}
-	}
 
 	return part
 }
@@ -243,17 +248,15 @@ func processToolResultBlock(
 }
 
 // processImageBlock handles image blocks
-func processImageBlock(block ContentBlock) map[string]interface{} {
-	if block.Source != nil {
-		return map[string]interface{}{
-			"inlineData": map[string]interface{}{
-				"mimeType": block.Source.MediaType,
-				"data":     block.Source.Data,
-			},
-		}
+func processInlineDataBlock(block ContentBlock) map[string]interface{} {
+	if block.Source == nil || block.Source.Type != "base64" {
+		return nil
 	}
 	return map[string]interface{}{
-		"text": "[Image]",
+		"inlineData": map[string]interface{}{
+			"mimeType": block.Source.MediaType,
+			"data":     block.Source.Data,
+		},
 	}
 }
 

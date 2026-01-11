@@ -295,21 +295,27 @@ func deepCleanUndefined(data map[string]interface{}) {
 	}
 }
 
-// detectBackgroundTask checks the latest meaningful user message for background-task keywords
-// Returns (true, modifiedBody) when detected, with tools/thinking stripped and thinking blocks removed
-func detectBackgroundTask(body []byte) (bool, []byte) {
-	var req map[string]interface{}
-	if err := json.Unmarshal(body, &req); err != nil {
-		return false, body
+func firstNRunes(s string, n int) string {
+	if n <= 0 {
+		return ""
 	}
-
-	messages, ok := req["messages"].([]interface{})
-	if !ok || len(messages) == 0 {
-		return false, body
+	r := []rune(s)
+	if len(r) <= n {
+		return s
 	}
+	return string(r[:n])
+}
 
-	// Find latest user message text
-	var lastUserText string
+func matchesAnyKeyword(text string, keywords []string) bool {
+	for _, kw := range keywords {
+		if strings.Contains(text, kw) {
+			return true
+		}
+	}
+	return false
+}
+
+func extractLastUserMessageForBackgroundDetection(messages []interface{}) string {
 	for i := len(messages) - 1; i >= 0; i-- {
 		msg, ok := messages[i].(map[string]interface{})
 		if !ok {
@@ -319,74 +325,119 @@ func detectBackgroundTask(body []byte) (bool, []byte) {
 		if role != "user" {
 			continue
 		}
-		content := msg["content"]
-		switch c := content.(type) {
+
+		var content string
+		switch c := msg["content"].(type) {
 		case string:
-			if strings.TrimSpace(c) != "" {
-				lastUserText = c
-				break
-			}
+			content = c
 		case []interface{}:
 			var texts []string
 			for _, b := range c {
-				if bm, ok := b.(map[string]interface{}); ok {
-					if t, ok := bm["text"].(string); ok && strings.TrimSpace(t) != "" {
-						texts = append(texts, t)
-					}
+				bm, ok := b.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				if t, _ := bm["type"].(string); t != "text" {
+					continue
+				}
+				if text, ok := bm["text"].(string); ok {
+					texts = append(texts, text)
 				}
 			}
-			if len(texts) > 0 {
-				lastUserText = strings.Join(texts, "\n")
-				break
-			}
+			content = strings.Join(texts, " ")
 		}
+
+		if strings.TrimSpace(content) == "" ||
+			strings.HasPrefix(content, "Warmup") ||
+			strings.Contains(content, "<system-reminder>") {
+			continue
+		}
+
+		return content
 	}
 
+	return ""
+}
+
+// detectBackgroundTask checks the latest meaningful user message for background-task keywords.
+// Returns (true, forcedModel, modifiedBody) when detected, with tools/thinking stripped and thinking blocks removed.
+// Mirrors Antigravity-Manager's background task detection logic.
+func detectBackgroundTask(body []byte) (bool, string, []byte) {
+	var req map[string]interface{}
+	if err := json.Unmarshal(body, &req); err != nil {
+		return false, "", body
+	}
+
+	messages, ok := req["messages"].([]interface{})
+	if !ok || len(messages) == 0 {
+		return false, "", body
+	}
+
+	lastUserText := extractLastUserMessageForBackgroundDetection(messages)
 	if lastUserText == "" {
-		return false, body
+		return false, "", body
 	}
 
-	lower := strings.ToLower(lastUserText)
+	// Background tasks are typically short; skip if too long
+	if len(lastUserText) > 800 {
+		return false, "", body
+	}
+
+	preview := firstNRunes(lastUserText, 500)
 
 	// Background task keyword sets (aligned with Manager categories)
 	titleKeywords := []string{
-		"write a 5-10 word title", "conversation title", "生成标题", "为对话起个标题", "title for the conversation",
+		"write a 5-10 word title", "Please write a 5-10 word title", "Respond with the title",
+		"Generate a title for", "Create a brief title", "title for the conversation", "conversation title",
+		"生成标题", "为对话起个标题",
 	}
 	summaryKeywords := []string{
-		"summarize this coding conversation", "concise summary", "extract key points", "简要总结", "compress the context",
+		"Summarize this coding conversation", "Summarize the conversation", "Concise summary",
+		"in under 50 characters", "compress the context", "Provide a concise summary",
+		"condense the previous messages", "shorten the conversation history", "extract key points from",
 	}
 	suggestionKeywords := []string{
-		"prompt suggestion", "suggest next prompts", "follow-up questions", "possible next actions", "建议下一步", "recommend next steps",
+		"prompt suggestion generator", "suggest next prompts", "what should I ask next",
+		"generate follow-up questions", "recommend next steps", "possible next actions",
 	}
 	systemKeywords := []string{
-		"warmup", "<system-reminder>", "this is a system message",
+		"Warmup", "<system-reminder>", "This is a system message",
 	}
 	probeKeywords := []string{
-		"check current directory", "list available tools", "verify environment", "环境探测", "test connection",
+		"check current directory", "list available tools", "verify environment", "test connection",
 	}
 
-	isBackground := containsAny(lower, titleKeywords) ||
-		containsAny(lower, summaryKeywords) ||
-		containsAny(lower, suggestionKeywords) ||
-		containsAny(lower, systemKeywords) ||
-		containsAny(lower, probeKeywords)
+	taskModel := ""
+	switch {
+	case matchesAnyKeyword(preview, systemKeywords):
+		taskModel = "gemini-2.5-flash-lite"
+	case matchesAnyKeyword(preview, titleKeywords):
+		taskModel = "gemini-2.5-flash-lite"
+	case matchesAnyKeyword(preview, summaryKeywords):
+		// Simple summaries fall back to lite, context compression to standard flash
+		if strings.Contains(preview, "in under 50 characters") {
+			taskModel = "gemini-2.5-flash-lite"
+		} else {
+			taskModel = "gemini-2.5-flash"
+		}
+	case matchesAnyKeyword(preview, suggestionKeywords):
+		taskModel = "gemini-2.5-flash-lite"
+	case matchesAnyKeyword(preview, probeKeywords):
+		taskModel = "gemini-2.5-flash-lite"
+	}
 
-	if !isBackground {
-		return false, body
+	if taskModel == "" {
+		return false, "", body
 	}
 
 	// Strip tools and thinking config
 	delete(req, "tools")
 	delete(req, "thinking")
 
-	// Remove thinking/redacted_thinking blocks from assistant/model messages
+	// Remove thinking/redacted_thinking blocks from message contents
 	for i, m := range messages {
 		msg, ok := m.(map[string]interface{})
 		if !ok {
-			continue
-		}
-		role, _ := msg["role"].(string)
-		if role != "assistant" && role != "model" {
 			continue
 		}
 		blocks, ok := msg["content"].([]interface{})
@@ -409,19 +460,9 @@ func detectBackgroundTask(body []byte) (bool, []byte) {
 
 	newBody, err := json.Marshal(req)
 	if err != nil {
-		return true, body
+		return true, taskModel, body
 	}
-	return true, newBody
-}
-
-// containsAny checks if text contains any keyword (case-insensitive, assumes text already lowercased)
-func containsAny(text string, keywords []string) bool {
-	for _, kw := range keywords {
-		if strings.Contains(text, strings.ToLower(kw)) {
-			return true
-		}
-	}
-	return false
+	return true, taskModel, newBody
 }
 
 // injectGoogleSearchTool injects googleSearch tool if not already present
