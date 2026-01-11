@@ -1,17 +1,17 @@
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { getTransport } from '@/lib/transport';
 import type { Cooldown } from '@/lib/transport';
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 
 export function useCooldowns() {
   const queryClient = useQueryClient();
-  const intervalRef = useRef<number | null>(null);
   const transport = getTransport();
+  const [, setTick] = useState(0); // Force re-render every second
 
   const { data: cooldowns = [], isLoading, error } = useQuery({
     queryKey: ['cooldowns'],
     queryFn: () => transport.getCooldowns(),
-    refetchInterval: 5000, // Refetch every 5 seconds
+    refetchInterval: 5000, // Refetch every 5 seconds from server
     staleTime: 3000,
   });
 
@@ -24,35 +24,27 @@ export function useCooldowns() {
     },
   });
 
-  // Calculate remaining time for each cooldown
+  // Update countdown display every second (client-side only, no server request)
   useEffect(() => {
     if (cooldowns.length === 0) {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
       return;
     }
 
-    // Update countdown every second
-    intervalRef.current = window.setInterval(() => {
-      queryClient.invalidateQueries({ queryKey: ['cooldowns'] });
+    const interval = setInterval(() => {
+      setTick(prev => prev + 1); // Trigger re-render to update countdown
     }, 1000);
 
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+      clearInterval(interval);
     };
-  }, [cooldowns.length, queryClient]);
+  }, [cooldowns.length]);
 
   // Helper to get cooldown for a specific provider
   const getCooldownForProvider = (providerId: number, clientType?: string) => {
     return cooldowns.find(
       (cd: Cooldown) =>
         cd.providerID === providerId &&
-        (cd.clientType === 'all' || (clientType && cd.clientType === clientType))
+        (cd.clientType === '' || cd.clientType === 'all' || (clientType && cd.clientType === clientType))
     );
   };
 
@@ -80,11 +72,11 @@ export function useCooldowns() {
     const secs = seconds % 60;
 
     if (hours > 0) {
-      return `${hours}h ${minutes}m`;
+      return `${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m ${String(secs).padStart(2, '0')}s`;
     } else if (minutes > 0) {
-      return `${minutes}m ${secs}s`;
+      return `${String(minutes).padStart(2, '0')}m ${String(secs).padStart(2, '0')}s`;
     } else {
-      return `${secs}s`;
+      return `${String(secs).padStart(2, '0')}s`;
     }
   };
 

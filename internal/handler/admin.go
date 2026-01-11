@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/Bowl42/maxx-next/internal/cooldown"
 	"github.com/Bowl42/maxx-next/internal/domain"
@@ -733,24 +732,13 @@ func (h *AdminHandler) handleCooldowns(w http.ResponseWriter, r *http.Request, p
 			providerNames[p.ID] = p.Name
 		}
 
-		// Build response
-		var result []map[string]interface{}
-		for key, until := range cooldowns {
-			remaining := time.Until(until)
-			if remaining < 0 {
-				continue
+		// Build response using GetCooldownInfo to include reason
+		var result []*cooldown.CooldownInfo
+		for key := range cooldowns {
+			info := cm.GetCooldownInfo(key.ProviderID, key.ClientType, providerNames[key.ProviderID])
+			if info != nil {
+				result = append(result, info)
 			}
-			clientTypeDesc := key.ClientType
-			if clientTypeDesc == "" {
-				clientTypeDesc = "all"
-			}
-			result = append(result, map[string]interface{}{
-				"providerID":   key.ProviderID,
-				"providerName": providerNames[key.ProviderID],
-				"clientType":   clientTypeDesc,
-				"until":        until,
-				"remaining":    remaining.Round(time.Second).String(),
-			})
 		}
 
 		writeJSON(w, http.StatusOK, result)
