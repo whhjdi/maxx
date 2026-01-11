@@ -36,7 +36,7 @@ func TransformClaudeToGemini(
 
 	// 4. Calculate final thinking mode state (before building request)
 	// Reference: Antigravity-Manager's thinking mode resolution (line 170-251)
-	hasThinking := calculateFinalThinkingState(&claudeReq, mappedModel)
+	hasThinking := calculateFinalThinkingState(&claudeReq, mappedModel, signatureCache)
 
 	// 5. Thinking block pre-filtering
 	filterInvalidThinkingBlocks(&claudeReq.Messages)
@@ -73,6 +73,10 @@ func TransformClaudeToGemini(
 	safetyThreshold := GetSafetyThresholdFromEnv()
 	safetySettings := BuildSafetySettingsMap(safetyThreshold)
 	geminiReq["safetySettings"] = safetySettings
+
+	// 5.6 Deep clean [undefined] strings (Cherry Studio injection fix)
+	// Reference: Antigravity-Manager line 278
+	deepCleanUndefined(geminiReq)
 
 	// 6. Serialize
 	return json.Marshal(geminiReq)
@@ -358,7 +362,7 @@ func detectWebSearchTool(claudeReq *ClaudeRequest) bool {
 // calculateFinalThinkingState determines the final thinking mode state
 // after all checks (model defaults, target support, history compatibility)
 // Reference: Antigravity-Manager's thinking mode resolution (line 170-251)
-func calculateFinalThinkingState(claudeReq *ClaudeRequest, mappedModel string) bool {
+func calculateFinalThinkingState(claudeReq *ClaudeRequest, mappedModel string, signatureCache *SignatureCache) bool {
 	// 1. Check explicit thinking config first
 	thinkingRequested := claudeReq.Thinking != nil && claudeReq.Thinking.Type == "enabled"
 
@@ -380,6 +384,38 @@ func calculateFinalThinkingState(claudeReq *ClaudeRequest, mappedModel string) b
 		// For now, we'll do a simplified check on Claude messages
 		if shouldDisableThinkingDueToClaudeHistory(claudeReq.Messages) {
 			log.Printf("[Antigravity] Disabling thinking due to incompatible tool-use history (mixed application)")
+			return false
+		}
+	}
+
+	// 5. [FIX #295 & #298] Check signature validity for function calls
+	// Reference: Antigravity-Manager's signature validation (line 204-251)
+	// This prevents Gemini 3 Pro from rejecting requests due to missing thought_signature
+	if thinkingRequested {
+		globalSig := ""
+		if signatureCache != nil {
+			globalSig = signatureCache.GetGlobalSignature()
+		}
+
+		// Check if there are thinking blocks in history
+		hasThinkingHistory := hasThinkingInMessages(claudeReq.Messages)
+
+		// Check if there are function calls
+		hasFunctionCalls := hasFunctionCallsInMessages(claudeReq.Messages)
+
+		// [FIX #298] For first-time thinking requests (no thinking history),
+		// we use permissive mode and let upstream handle validation.
+		// We only enforce strict signature checks when function calls are involved.
+		needsSignatureCheck := hasFunctionCalls
+
+		if !hasThinkingHistory && thinkingRequested {
+			log.Printf("[Antigravity] First thinking request detected. Using permissive mode - "+
+				"signature validation will be handled by upstream API.")
+		}
+
+		if needsSignatureCheck && !hasValidSignatureForFunctionCalls(claudeReq.Messages, globalSig) {
+			log.Printf("[Antigravity] [FIX #295] No valid signature found for function calls. "+
+				"Disabling thinking to prevent Gemini 3 Pro rejection.")
 			return false
 		}
 	}
@@ -425,3 +461,76 @@ func shouldDisableThinkingDueToClaudeHistory(messages []ClaudeMessage) bool {
 
 	return false
 }
+
+// hasValidSignatureForFunctionCalls checks if we have any valid signature for function calls
+// Reference: Antigravity-Manager's has_valid_signature_for_function_calls (line 405-435)
+// [FIX #295] Prevents Gemini 3 Pro from rejecting requests due to missing thought_signature
+func hasValidSignatureForFunctionCalls(messages []ClaudeMessage, globalSig string) bool {
+	// 1. Check global store
+	if globalSig != "" && len(globalSig) >= MinSignatureLength {
+		return true
+	}
+
+	// 2. Check if any message has a thinking block with valid signature
+	for i := len(messages) - 1; i >= 0; i-- {
+		if messages[i].Role != "assistant" {
+			continue
+		}
+
+		blocks := parseContentBlocks(messages[i].Content)
+		if blocks == nil {
+			continue
+		}
+
+		for _, block := range blocks {
+			if block.Type == "thinking" && block.Signature != "" {
+				if len(block.Signature) >= MinSignatureLength {
+					return true
+				}
+			}
+		}
+	}
+
+	return false
+}
+
+// hasThinkingInMessages checks if any message contains thinking blocks
+func hasThinkingInMessages(messages []ClaudeMessage) bool {
+	for _, msg := range messages {
+		if msg.Role != "assistant" {
+			continue
+		}
+
+		blocks := parseContentBlocks(msg.Content)
+		if blocks == nil {
+			continue
+		}
+
+		for _, block := range blocks {
+			if block.Type == "thinking" {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// hasFunctionCallsInMessages checks if any message contains tool_use blocks
+func hasFunctionCallsInMessages(messages []ClaudeMessage) bool {
+	for _, msg := range messages {
+		blocks := parseContentBlocks(msg.Content)
+		if blocks == nil {
+			continue
+		}
+
+		for _, block := range blocks {
+			if block.Type == "tool_use" {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
