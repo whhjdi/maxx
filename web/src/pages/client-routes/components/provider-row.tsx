@@ -10,7 +10,7 @@ import type { ProviderConfigItem } from '../types';
 import { useAntigravityQuota } from '@/hooks/queries';
 import { useCooldowns } from '@/hooks/use-cooldowns';
 import { CooldownDetailsDialog } from '@/components/cooldown-details-dialog';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // 格式化 Token 数量
 function formatTokens(count: number): string {
@@ -215,6 +215,27 @@ export function ProviderRowContent({
   const cooldown = getCooldownForProvider(provider.id, clientType);
   const isInCooldown = isInCooldownProp ?? !!cooldown;
 
+  // 实时倒计时状态
+  const [liveCountdown, setLiveCountdown] = useState<string>('');
+
+  // 每秒更新倒计时
+  useEffect(() => {
+    if (!cooldown) {
+      setLiveCountdown('');
+      return;
+    }
+
+    // 立即更新一次
+    setLiveCountdown(formatRemaining(cooldown));
+
+    // 每秒更新
+    const interval = setInterval(() => {
+      setLiveCountdown(formatRemaining(cooldown));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [cooldown, formatRemaining]);
+
   const handleClearCooldown = (e: React.MouseEvent) => {
     e.stopPropagation();
     clearCooldown(provider.id);
@@ -312,7 +333,7 @@ export function ProviderRowContent({
       {isInCooldown && cooldown && (
         <div className="absolute -top-1 -right-1 z-20 flex items-center gap-1 bg-white/95 dark:bg-cyan-900/95 text-cyan-600 dark:text-cyan-300 text-xs font-bold px-2 py-1 rounded-bl-xl shadow-sm border-l border-b border-cyan-100 dark:border-cyan-800/50 backdrop-blur-md">
           <Snowflake size={12} className="animate-spin-slow" />
-          <span className="font-mono tracking-tighter">{formatRemaining(cooldown)}</span>
+          <span className="font-mono tracking-tighter">{liveCountdown}</span>
           <button
             onClick={handleClearCooldown}
             disabled={isClearingCooldown}
