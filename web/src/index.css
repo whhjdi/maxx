@@ -432,9 +432,19 @@ body {
   100% { background-position: 1rem 1rem; }
 }
 
-@keyframes snowing {
+@keyframes snowing-near {
   0% { background-position: 0 0; }
-  100% { background-position: 50px 100px; }
+  100% { background-position: 150px 300px; }
+}
+
+@keyframes snowing-mid {
+  0% { background-position: 0 0; }
+  100% { background-position: -120px 240px; }
+}
+
+@keyframes snowing-far {
+  0% { background-position: 0 0; }
+  100% { background-position: 90px 180px; }
 }
 
 .animate-streaming-badge {
@@ -467,13 +477,42 @@ body {
 }
 
 .animate-snowing {
+  /* Layer 1: Near (Large & Fast) */
   background-image:
-    radial-gradient(6px 6px at 20% 30%, rgba(34, 211, 238, 0.4) 50%, transparent 50%),
-    radial-gradient(8px 8px at 40% 70%, rgba(34, 211, 238, 0.3) 50%, transparent 50%),
-    radial-gradient(5px 5px at 60% 40%, rgba(34, 211, 238, 0.4) 50%, transparent 50%),
-    radial-gradient(7px 7px at 80% 80%, rgba(34, 211, 238, 0.3) 50%, transparent 50%);
-  background-size: 100px 100px;
-  animation: snowing 5s linear infinite;
+    radial-gradient(6px 6px at 20% 30%, rgba(34, 211, 238, 0.5) 50%, transparent 50%),
+    radial-gradient(8px 8px at 40% 70%, rgba(34, 211, 238, 0.4) 50%, transparent 50%),
+    radial-gradient(5px 5px at 60% 40%, rgba(34, 211, 238, 0.5) 50%, transparent 50%),
+    radial-gradient(7px 7px at 80% 80%, rgba(34, 211, 238, 0.4) 50%, transparent 50%);
+  background-size: 150px 150px;
+  animation: snowing-near 6s linear infinite;
+}
+
+.animate-snowing::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* Layer 2: Mid (Medium) */
+  background-image:
+    radial-gradient(4px 4px at 10% 80%, rgba(34, 211, 238, 0.3) 50%, transparent 50%),
+    radial-gradient(5px 5px at 30% 20%, rgba(34, 211, 238, 0.3) 50%, transparent 50%),
+    radial-gradient(3.5px 3.5px at 60% 60%, rgba(34, 211, 238, 0.3) 50%, transparent 50%),
+    radial-gradient(4.5px 4.5px at 90% 40%, rgba(34, 211, 238, 0.3) 50%, transparent 50%);
+  background-size: 120px 120px;
+  animation: snowing-mid 8s linear infinite;
+}
+
+.animate-snowing::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* Layer 3: Far (Small & Slow) */
+  background-image:
+    radial-gradient(2px 2px at 5% 45%, rgba(34, 211, 238, 0.2) 50%, transparent 50%),
+    radial-gradient(2.5px 2.5px at 25% 95%, rgba(34, 211, 238, 0.2) 50%, transparent 50%),
+    radial-gradient(2px 2px at 55% 15%, rgba(34, 211, 238, 0.2) 50%, transparent 50%),
+    radial-gradient(2.5px 2.5px at 85% 55%, rgba(34, 211, 238, 0.2) 50%, transparent 50%);
+  background-size: 90px 90px;
+  animation: snowing-far 12s linear infinite;
 }
 
 /* Marquee effect for table rows - direct background animation */
