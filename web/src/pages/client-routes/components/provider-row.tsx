@@ -427,11 +427,14 @@ export function ProviderRowContent({
       </div>
 
       {/* Control Area - Switch */}
-      <div className="relative z-10 flex items-center flex-shrink-0 ml-auto pl-2">
+      <div
+        className="relative z-10 flex items-center flex-shrink-0 ml-auto pl-2"
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
         <Switch
           checked={enabled}
           onCheckedChange={onToggle}
-          onClick={(e) => e.stopPropagation()}
           disabled={isToggling}
         />
       </div>
