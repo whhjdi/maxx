@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="web/public/logo.png" alt="maxx-next logo" width="128" height="128">
+</p>
+
 # maxx-next
 
 Multi-provider AI proxy with a built-in admin UI, routing, and usage tracking.
