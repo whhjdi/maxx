@@ -231,7 +231,7 @@ export function ProviderDetailsDialog({
               <Switch
                 checked={enabled}
                 onCheckedChange={onToggle}
-                disabled={isToggling || isInCooldown}
+                disabled={isToggling}
               />
             </div>
             <div className="w-px h-6 bg-border" />

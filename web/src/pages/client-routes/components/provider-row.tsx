@@ -425,13 +425,9 @@ export function ProviderRowContent({
       <div className="relative z-10 flex items-center flex-shrink-0 ml-auto pl-2">
         <Switch
           checked={enabled}
-          onCheckedChange={() => {
-            if (!isInCooldown) {
-              onToggle();
-            }
-          }}
+          onCheckedChange={onToggle}
           onClick={(e) => e.stopPropagation()}
-          disabled={isToggling || isInCooldown}
+          disabled={isToggling}
         />
       </div>
 
