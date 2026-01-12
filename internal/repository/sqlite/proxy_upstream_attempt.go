@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"strings"
 	"time"
 
 	"github.com/Bowl42/maxx-next/internal/domain"
@@ -66,13 +67,27 @@ func (r *ProxyUpstreamAttemptRepository) ListByProxyRequestID(proxyRequestID uin
 	return attempts, rows.Err()
 }
 
-// GetProviderStats returns aggregated statistics per provider, optionally filtered by client type
-func (r *ProxyUpstreamAttemptRepository) GetProviderStats(clientType string) (map[uint64]*domain.ProviderStats, error) {
+// GetProviderStats returns aggregated statistics per provider, optionally filtered by client type and project ID
+func (r *ProxyUpstreamAttemptRepository) GetProviderStats(clientType string, projectID uint64) (map[uint64]*domain.ProviderStats, error) {
 	var query string
 	var args []interface{}
 
+	// Build WHERE conditions
+	conditions := []string{"a.provider_id > 0"}
+	needJoin := false
+
 	if clientType != "" {
-		// Filter by client type - need to join with proxy_requests
+		conditions = append(conditions, "r.client_type = ?")
+		args = append(args, clientType)
+		needJoin = true
+	}
+	if projectID > 0 {
+		conditions = append(conditions, "r.project_id = ?")
+		args = append(args, projectID)
+		needJoin = true
+	}
+
+	if needJoin {
 		query = `
 			SELECT
 				a.provider_id,
@@ -87,12 +102,10 @@ func (r *ProxyUpstreamAttemptRepository) GetProviderStats(clientType string) (ma
 				COALESCE(SUM(a.cost), 0) as total_cost
 			FROM proxy_upstream_attempts a
 			INNER JOIN proxy_requests r ON a.proxy_request_id = r.id
-			WHERE a.provider_id > 0 AND r.client_type = ?
+			WHERE ` + joinConditions(conditions) + `
 			GROUP BY a.provider_id
 		`
-		args = append(args, clientType)
 	} else {
-		// No filter - get all stats
 		query = `
 			SELECT
 				provider_id,
@@ -142,4 +155,9 @@ func (r *ProxyUpstreamAttemptRepository) GetProviderStats(clientType string) (ma
 		stats[s.ProviderID] = &s
 	}
 	return stats, rows.Err()
+}
+
+// joinConditions joins SQL conditions with AND
+func joinConditions(conditions []string) string {
+	return strings.Join(conditions, " AND ")
 }

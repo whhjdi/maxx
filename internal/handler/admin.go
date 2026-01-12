@@ -49,7 +49,7 @@ func (h *AdminHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "routes":
 		h.handleRoutes(w, r, id)
 	case "projects":
-		h.handleProjects(w, r, id)
+		h.handleProjects(w, r, id, parts)
 	case "sessions":
 		h.handleSessions(w, r)
 	case "retry-configs":
@@ -312,7 +312,13 @@ func (h *AdminHandler) handleRoutes(w http.ResponseWriter, r *http.Request, id u
 }
 
 // Project handlers
-func (h *AdminHandler) handleProjects(w http.ResponseWriter, r *http.Request, id uint64) {
+func (h *AdminHandler) handleProjects(w http.ResponseWriter, r *http.Request, id uint64, parts []string) {
+	// Check for by-slug endpoint: /admin/projects/by-slug/{slug}
+	if len(parts) > 2 && parts[2] == "by-slug" {
+		h.handleProjectBySlug(w, r, parts)
+		return
+	}
+
 	switch r.Method {
 	case http.MethodGet:
 		if id > 0 {
@@ -377,6 +383,27 @@ func (h *AdminHandler) handleProjects(w http.ResponseWriter, r *http.Request, id
 	default:
 		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
 	}
+}
+
+// handleProjectBySlug handles GET /admin/projects/by-slug/{slug}
+func (h *AdminHandler) handleProjectBySlug(w http.ResponseWriter, r *http.Request, parts []string) {
+	if r.Method != http.MethodGet {
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
+		return
+	}
+
+	if len(parts) < 4 || parts[3] == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "slug required"})
+		return
+	}
+
+	slug := parts[3]
+	project, err := h.svc.GetProjectBySlug(slug)
+	if err != nil {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "project not found"})
+		return
+	}
+	writeJSON(w, http.StatusOK, project)
 }
 
 // Session handlers
@@ -680,7 +707,11 @@ func (h *AdminHandler) handleProviderStats(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	clientType := r.URL.Query().Get("client_type")
-	stats, err := h.svc.GetProviderStats(clientType)
+	var projectID uint64
+	if pidStr := r.URL.Query().Get("project_id"); pidStr != "" {
+		projectID, _ = strconv.ParseUint(pidStr, 10, 64)
+	}
+	stats, err := h.svc.GetProviderStats(clientType, projectID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return

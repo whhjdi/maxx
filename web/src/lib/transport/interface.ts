@@ -47,6 +47,7 @@ export interface Transport {
   // ===== Project API =====
   getProjects(): Promise<Project[]>;
   getProject(id: number): Promise<Project>;
+  getProjectBySlug(slug: string): Promise<Project>;
   createProject(data: CreateProjectData): Promise<Project>;
   updateProject(id: number, data: Partial<Project>): Promise<Project>;
   deleteProject(id: number): Promise<void>;
@@ -85,7 +86,7 @@ export interface Transport {
   getProxyStatus(): Promise<ProxyStatus>;
 
   // ===== Provider Stats API =====
-  getProviderStats(clientType?: string): Promise<Record<number, ProviderStats>>;
+  getProviderStats(clientType?: string, projectId?: number): Promise<Record<number, ProviderStats>>;
 
   // ===== Settings API =====
   getSettings(): Promise<Record<string, string>>;

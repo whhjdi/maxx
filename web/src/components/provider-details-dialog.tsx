@@ -347,8 +347,8 @@ export function ProviderDetailsDialog({
                   </button>
                 )}
 
-                {/* Delete Button (for converted routes only) */}
-                {!isNative && onDelete && (
+                {/* Delete Button */}
+                {onDelete && (
                   <button
                     onClick={onDelete}
                     className="w-full flex items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 px-4 py-2.5 text-sm font-medium text-red-400 transition-colors"

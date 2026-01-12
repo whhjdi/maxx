@@ -106,6 +106,11 @@ export class HttpTransport implements Transport {
     return data;
   }
 
+  async getProjectBySlug(slug: string): Promise<Project> {
+    const { data } = await this.client.get<Project>(`/projects/by-slug/${slug}`);
+    return data;
+  }
+
   async createProject(payload: CreateProjectData): Promise<Project> {
     const { data } = await this.client.post<Project>('/projects', payload);
     return data;
@@ -236,9 +241,11 @@ export class HttpTransport implements Transport {
 
   // ===== Provider Stats API =====
 
-  async getProviderStats(clientType?: string): Promise<Record<number, ProviderStats>> {
-    const params = clientType ? { client_type: clientType } : undefined;
-    const { data } = await this.client.get<Record<number, ProviderStats>>('/provider-stats', { params });
+  async getProviderStats(clientType?: string, projectId?: number): Promise<Record<number, ProviderStats>> {
+    const params: Record<string, string | number> = {};
+    if (clientType) params.client_type = clientType;
+    if (projectId !== undefined) params.project_id = projectId;
+    const { data } = await this.client.get<Record<number, ProviderStats>>('/provider-stats', { params: Object.keys(params).length > 0 ? params : undefined });
     return data ?? {};
   }
 

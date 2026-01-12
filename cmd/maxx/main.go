@@ -176,6 +176,13 @@ func main() {
 	adminHandler := handler.NewAdminHandler(adminService, logPath)
 	antigravityHandler := handler.NewAntigravityHandler(adminService, antigravityQuotaRepo)
 
+	// Create cached project repository for project proxy handler
+	cachedProjectRepo := cached.NewProjectRepository(projectRepo)
+	if err := cachedProjectRepo.Load(); err != nil {
+		log.Printf("Warning: Failed to load projects cache: %v", err)
+	}
+	projectProxyHandler := handler.NewProjectProxyHandler(proxyHandler, cachedProjectRepo)
+
 	// Setup routes
 	mux := http.NewServeMux()
 
@@ -205,9 +212,10 @@ func main() {
 	// WebSocket endpoint
 	mux.HandleFunc("/ws", wsHub.HandleWebSocket)
 
-	// Serve static files (Web UI) - must be last (default route)
+	// Serve static files (Web UI) with project proxy support - must be last (default route)
 	staticHandler := handler.NewStaticHandler()
-	mux.Handle("/", staticHandler)
+	combinedHandler := handler.NewCombinedHandler(projectProxyHandler, staticHandler)
+	mux.Handle("/", combinedHandler)
 
 	// Wrap with logging middleware
 	loggedMux := handler.LoggingMiddleware(mux)
@@ -224,6 +232,7 @@ func main() {
 	log.Printf("  OpenAI: http://localhost%s/v1/chat/completions", *addr)
 	log.Printf("  Codex:  http://localhost%s/v1/responses", *addr)
 	log.Printf("  Gemini: http://localhost%s/v1beta/models/{model}:generateContent", *addr)
+	log.Printf("Project proxy: http://localhost%s/{project-slug}/v1/messages (etc.)", *addr)
 
 	if err := http.ListenAndServe(*addr, loggedMux); err != nil {
 		log.Printf("Server error: %v", err)

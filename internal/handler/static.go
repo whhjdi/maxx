@@ -50,3 +50,43 @@ func NewStaticHandler() http.Handler {
 		http.ServeContent(w, r, filepath.Base(filePath), stat.ModTime(), file)
 	})
 }
+
+// NewCombinedHandler creates a handler that routes project-prefixed proxy requests
+// to the ProjectProxyHandler, and all other requests to the static file handler.
+// This allows URLs like /my-project/v1/messages to be proxied through a specific project.
+func NewCombinedHandler(projectProxyHandler *ProjectProxyHandler, staticHandler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Check if this looks like a project-prefixed proxy request
+		if isProjectProxyPath(r.URL.Path) {
+			projectProxyHandler.ServeHTTP(w, r)
+			return
+		}
+
+		// Otherwise, serve static files
+		staticHandler.ServeHTTP(w, r)
+	})
+}
+
+// isProjectProxyPath checks if the path looks like a project-prefixed proxy request
+// e.g., /my-project/v1/messages, /my-project/v1/chat/completions, etc.
+func isProjectProxyPath(urlPath string) bool {
+	// Remove leading slash and split
+	path := strings.TrimPrefix(urlPath, "/")
+	parts := strings.SplitN(path, "/", 2)
+
+	if len(parts) < 2 {
+		return false
+	}
+
+	slug := parts[0]
+	apiPath := "/" + parts[1]
+
+	// Skip known non-project prefixes
+	if slug == "admin" || slug == "antigravity" || slug == "v1" || slug == "v1beta" ||
+		slug == "responses" || slug == "ws" || slug == "health" || slug == "assets" {
+		return false
+	}
+
+	// Check if the API path looks like a known proxy endpoint
+	return isValidAPIPath(apiPath)
+}

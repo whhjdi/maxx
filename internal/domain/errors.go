@@ -9,6 +9,7 @@ import (
 var (
     ErrNotFound          = errors.New("not found")
     ErrAlreadyExists     = errors.New("already exists")
+    ErrSlugExists        = errors.New("slug already exists")
     ErrInvalidInput      = errors.New("invalid input")
     ErrNoRoutes          = errors.New("no routes available")
     ErrAllRoutesFailed   = errors.New("all routes failed")

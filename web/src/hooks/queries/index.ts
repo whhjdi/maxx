@@ -20,6 +20,7 @@ export {
   projectKeys,
   useProjects,
   useProject,
+  useProjectBySlug,
   useCreateProject,
   useUpdateProject,
   useDeleteProject,

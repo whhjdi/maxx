@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button, Card, CardContent, CardHeader, CardTitle, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Badge } from '@/components/ui';
-import { useRoutes, useDeleteRoute, useProviders, useProjects } from '@/hooks/queries';
+import { useRoutes, useDeleteRoute, useProviders } from '@/hooks/queries';
 import { Plus, Trash2, Pencil } from 'lucide-react';
 import { RouteForm } from './form';
 import type { Route } from '@/lib/transport';
@@ -8,18 +8,15 @@ import type { Route } from '@/lib/transport';
 export function RoutesPage() {
   const { data: routes, isLoading } = useRoutes();
   const { data: providers } = useProviders();
-  const { data: projects } = useProjects();
   const deleteRoute = useDeleteRoute();
   const [showForm, setShowForm] = useState(false);
   const [editingRoute, setEditingRoute] = useState<Route | undefined>();
 
+  // Filter to only show global routes (projectID = 0)
+  const globalRoutes = routes?.filter((route) => route.projectID === 0) ?? [];
+
   const getProviderName = (providerId: number) => {
     return providers?.find((p) => p.id === providerId)?.name ?? `#${providerId}`;
-  };
-
-  const getProjectName = (projectId: number) => {
-    if (projectId === 0) return 'Global';
-    return projects?.find((p) => p.id === projectId)?.name ?? `#${projectId}`;
   };
 
   const handleEdit = (route: Route) => {
@@ -41,7 +38,12 @@ export function RoutesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Routes</h2>
+        <div>
+          <h2 className="text-2xl font-bold">Global Routes</h2>
+          <p className="text-sm text-text-secondary">
+            These routes apply to all projects. Project-specific routes can be configured in each project's settings.
+          </p>
+        </div>
         <Button onClick={() => setShowForm(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Add Route
@@ -54,14 +56,14 @@ export function RoutesPage() {
             <CardTitle>{editingRoute ? 'Edit Route' : 'New Route'}</CardTitle>
           </CardHeader>
           <CardContent>
-            <RouteForm route={editingRoute} onClose={handleCloseForm} />
+            <RouteForm route={editingRoute} onClose={handleCloseForm} isGlobal />
           </CardContent>
         </Card>
       )}
 
       <Card>
         <CardHeader>
-          <CardTitle>All Routes</CardTitle>
+          <CardTitle>All Global Routes</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -73,25 +75,19 @@ export function RoutesPage() {
                   <TableHead>ID</TableHead>
                   <TableHead>Client</TableHead>
                   <TableHead>Provider</TableHead>
-                  <TableHead>Project</TableHead>
                   <TableHead>Position</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {routes?.map((route) => (
+                {globalRoutes.map((route) => (
                   <TableRow key={route.id}>
                     <TableCell className="font-mono">{route.id}</TableCell>
                     <TableCell>
                       <Badge variant="info">{route.clientType}</Badge>
                     </TableCell>
                     <TableCell>{getProviderName(route.providerID)}</TableCell>
-                    <TableCell>
-                      <span className={route.projectID === 0 ? 'text-gray-400' : ''}>
-                        {getProjectName(route.projectID)}
-                      </span>
-                    </TableCell>
                     <TableCell className="font-mono">{route.position}</TableCell>
                     <TableCell>
                       <Badge variant={route.isEnabled ? 'success' : 'default'}>
@@ -119,10 +115,10 @@ export function RoutesPage() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {(!routes || routes.length === 0) && (
+                {globalRoutes.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-gray-500">
-                      No routes configured
+                    <TableCell colSpan={6} className="text-center text-gray-500">
+                      No global routes configured
                     </TableCell>
                   </TableRow>
                 )}

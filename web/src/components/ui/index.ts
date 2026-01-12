@@ -39,3 +39,6 @@ export type { SelectProps } from './select';
 
 // Switch
 export { Switch } from './switch';
+
+// Tabs
+export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';

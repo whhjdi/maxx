@@ -51,9 +51,12 @@ export interface Project {
   createdAt: string;
   updatedAt: string;
   name: string;
+  slug: string;
 }
 
-export type CreateProjectData = Omit<Project, 'id' | 'createdAt' | 'updatedAt'>;
+export type CreateProjectData = Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'slug'> & {
+  slug?: string;
+};
 
 // ===== Session =====
 

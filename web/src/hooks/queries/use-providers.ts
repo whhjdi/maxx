@@ -77,10 +77,10 @@ export function useDeleteProvider() {
 }
 
 // 获取 Provider 统计信息
-export function useProviderStats(clientType?: string) {
+export function useProviderStats(clientType?: string, projectId?: number) {
   return useQuery({
-    queryKey: [...providerKeys.stats(), clientType],
-    queryFn: () => transport.getProviderStats(clientType),
+    queryKey: [...providerKeys.stats(), clientType, projectId],
+    queryFn: () => transport.getProviderStats(clientType, projectId),
     // 每 30 秒刷新一次
     refetchInterval: 30000,
     enabled: !!clientType, // 只在有 clientType 时才查询

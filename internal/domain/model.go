@@ -81,6 +81,7 @@ type Project struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 
 	Name string `json:"name"`
+	Slug string `json:"slug"`
 }
 
 type Session struct {

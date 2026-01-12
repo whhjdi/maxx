@@ -19,6 +19,8 @@ export interface StreamingState {
   countsByProvider: Map<number, number>;
   /** 按 providerID + clientType 组合统计的活动请求数 (key: `${providerID}:${clientType}`) */
   countsByProviderAndClient: Map<string, number>;
+  /** 按 routeID 统计的活动请求数 */
+  countsByRoute: Map<number, number>;
 }
 
 /**
@@ -67,11 +69,18 @@ export function useStreamingRequests(): StreamingState {
   const countsByClient = new Map<ClientType, number>();
   const countsByProvider = new Map<number, number>();
   const countsByProviderAndClient = new Map<string, number>();
+  const countsByRoute = new Map<number, number>();
 
   for (const request of activeRequests.values()) {
     // 按 clientType 统计
     const clientCount = countsByClient.get(request.clientType) || 0;
     countsByClient.set(request.clientType, clientCount + 1);
+
+    // 按 routeID 统计
+    if (request.routeID > 0) {
+      const routeCount = countsByRoute.get(request.routeID) || 0;
+      countsByRoute.set(request.routeID, routeCount + 1);
+    }
 
     // 按 providerID 统计
     if (request.providerID > 0) {
@@ -91,6 +100,7 @@ export function useStreamingRequests(): StreamingState {
     countsByClient,
     countsByProvider,
     countsByProviderAndClient,
+    countsByRoute,
   };
 }
 

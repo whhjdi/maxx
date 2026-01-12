@@ -218,6 +218,10 @@ func (s *AdminService) GetProject(id uint64) (*domain.Project, error) {
 	return s.projectRepo.GetByID(id)
 }
 
+func (s *AdminService) GetProjectBySlug(slug string) (*domain.Project, error) {
+	return s.projectRepo.GetBySlug(slug)
+}
+
 func (s *AdminService) CreateProject(project *domain.Project) error {
 	return s.projectRepo.Create(project)
 }
@@ -330,8 +334,8 @@ func (s *AdminService) GetProxyUpstreamAttempts(proxyRequestID uint64) ([]*domai
 	return s.attemptRepo.ListByProxyRequestID(proxyRequestID)
 }
 
-func (s *AdminService) GetProviderStats(clientType string) (map[uint64]*domain.ProviderStats, error) {
-	return s.attemptRepo.GetProviderStats(clientType)
+func (s *AdminService) GetProviderStats(clientType string, projectID uint64) (map[uint64]*domain.ProviderStats, error) {
+	return s.attemptRepo.GetProviderStats(clientType, projectID)
 }
 
 // ===== Settings API =====

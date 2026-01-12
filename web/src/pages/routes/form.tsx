@@ -6,9 +6,11 @@ import type { ClientType, Route } from '@/lib/transport';
 interface RouteFormProps {
   route?: Route;
   onClose: () => void;
+  isGlobal?: boolean;
+  projectId?: number;
 }
 
-export function RouteForm({ route, onClose }: RouteFormProps) {
+export function RouteForm({ route, onClose, isGlobal, projectId }: RouteFormProps) {
   const createRoute = useCreateRoute();
   const updateRoute = useUpdateRoute();
   const { data: providers } = useProviders();
@@ -17,7 +19,7 @@ export function RouteForm({ route, onClose }: RouteFormProps) {
 
   const [clientType, setClientType] = useState<ClientType>('openai');
   const [providerID, setProviderID] = useState('');
-  const [projectID, setProjectID] = useState('0');
+  const [projectID, setProjectID] = useState(projectId !== undefined ? String(projectId) : '0');
   const [position, setPosition] = useState('1');
   const [isEnabled, setIsEnabled] = useState(true);
 
@@ -30,6 +32,15 @@ export function RouteForm({ route, onClose }: RouteFormProps) {
       setIsEnabled(route.isEnabled);
     }
   }, [route]);
+
+  // Lock projectID for global routes or when projectId is provided
+  useEffect(() => {
+    if (isGlobal) {
+      setProjectID('0');
+    } else if (projectId !== undefined) {
+      setProjectID(String(projectId));
+    }
+  }, [isGlobal, projectId]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +66,7 @@ export function RouteForm({ route, onClose }: RouteFormProps) {
   };
 
   const isPending = createRoute.isPending || updateRoute.isPending;
+  const showProjectSelector = !isGlobal && projectId === undefined;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -89,17 +101,19 @@ export function RouteForm({ route, onClose }: RouteFormProps) {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <div>
-          <label className="mb-1 block text-sm font-medium">Project</label>
-          <Select value={projectID} onChange={(e) => setProjectID(e.target.value)}>
-            <option value="0">Global (All Projects)</option>
-            {projects?.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </Select>
-        </div>
+        {showProjectSelector && (
+          <div>
+            <label className="mb-1 block text-sm font-medium">Project</label>
+            <Select value={projectID} onChange={(e) => setProjectID(e.target.value)}>
+              <option value="0">Global (All Projects)</option>
+              {projects?.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+        )}
         <div>
           <label className="mb-1 block text-sm font-medium">Position (lower = higher priority)</label>
           <Input

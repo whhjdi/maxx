@@ -7,6 +7,7 @@ import { ProvidersPage } from '@/pages/providers';
 import { RoutesPage } from '@/pages/routes';
 import { ClientRoutesPage } from '@/pages/client-routes';
 import { ProjectsPage } from '@/pages/projects';
+import { ProjectDetailPage } from '@/pages/projects/detail';
 import { SessionsPage } from '@/pages/sessions';
 import { RetryConfigsPage } from '@/pages/retry-configs';
 import { RoutingStrategiesPage } from '@/pages/routing-strategies';
@@ -26,6 +27,7 @@ function App() {
           <Route path="routes" element={<RoutesPage />} />
           <Route path="routes/:clientType" element={<ClientRoutesPage />} />
           <Route path="projects" element={<ProjectsPage />} />
+          <Route path="projects/:slug" element={<ProjectDetailPage />} />
           <Route path="sessions" element={<SessionsPage />} />
           <Route path="retry-configs" element={<RetryConfigsPage />} />
           <Route path="routing-strategies" element={<RoutingStrategiesPage />} />

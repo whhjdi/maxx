@@ -104,6 +104,10 @@ export class WailsTransport implements Transport {
     await this.call<void>('AdminService.DeleteProject', id);
   }
 
+  async getProjectBySlug(slug: string): Promise<Project> {
+    return this.call<Project>('AdminService.GetProjectBySlug', slug);
+  }
+
   // ===== Route API =====
 
   async getRoutes(): Promise<Route[]> {

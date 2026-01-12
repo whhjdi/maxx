@@ -42,6 +42,7 @@ type ProjectRepository interface {
 	Update(project *domain.Project) error
 	Delete(id uint64) error
 	GetByID(id uint64) (*domain.Project, error)
+	GetBySlug(slug string) (*domain.Project, error)
 	List() ([]*domain.Project, error)
 }
 
@@ -68,7 +69,7 @@ type ProxyUpstreamAttemptRepository interface {
 	Create(attempt *domain.ProxyUpstreamAttempt) error
 	Update(attempt *domain.ProxyUpstreamAttempt) error
 	ListByProxyRequestID(proxyRequestID uint64) ([]*domain.ProxyUpstreamAttempt, error)
-	GetProviderStats(clientType string) (map[uint64]*domain.ProviderStats, error)
+	GetProviderStats(clientType string, projectID uint64) (map[uint64]*domain.ProviderStats, error)
 }
 
 type SystemSettingRepository interface {

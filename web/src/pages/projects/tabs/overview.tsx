@@ -1,0 +1,161 @@
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, Input, Button } from '@/components/ui';
+import { useUpdateProject, projectKeys } from '@/hooks/queries';
+import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import type { Project } from '@/lib/transport';
+import { Loader2, Save, Copy, Check } from 'lucide-react';
+
+interface OverviewTabProps {
+  project: Project;
+}
+
+export function OverviewTab({ project }: OverviewTabProps) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const updateProject = useUpdateProject();
+  const [name, setName] = useState(project.name);
+  const [slug, setSlug] = useState(project.slug);
+  const [copied, setCopied] = useState(false);
+
+  const hasChanges = name !== project.name || slug !== project.slug;
+
+  const handleSave = () => {
+    updateProject.mutate(
+      { id: project.id, data: { name, slug } },
+      {
+        onSuccess: (updatedProject) => {
+          // Invalidate queries
+          queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+          queryClient.invalidateQueries({ queryKey: projectKeys.slug(project.slug) });
+          // If slug changed, navigate to new URL
+          if (slug !== project.slug) {
+            navigate(`/projects/${updatedProject.slug}`, { replace: true });
+          }
+        },
+      }
+    );
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Generate example proxy URLs
+  const baseUrl = window.location.origin;
+  const proxyUrls = [
+    { label: 'Claude API', url: `${baseUrl}/${project.slug}/v1/messages` },
+    { label: 'OpenAI API', url: `${baseUrl}/${project.slug}/v1/chat/completions` },
+    { label: 'Gemini API', url: `${baseUrl}/${project.slug}/v1beta/models/{model}:generateContent` },
+  ];
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Project Info */}
+      <Card className="border-border bg-surface-primary">
+        <CardHeader>
+          <CardTitle className="text-base">Project Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label htmlFor="name" className="text-sm font-medium text-text-primary">Name</label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="bg-surface-secondary border-border"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="slug" className="text-sm font-medium text-text-primary">Slug</label>
+              <Input
+                id="slug"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                className="bg-surface-secondary border-border font-mono"
+                placeholder="project-slug"
+              />
+              <p className="text-xs text-text-muted">
+                Used in URLs and proxy paths
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-text-secondary">Created:</span>{' '}
+              <span className="text-text-primary">
+                {new Date(project.createdAt).toLocaleString()}
+              </span>
+            </div>
+            <div>
+              <span className="text-text-secondary">Updated:</span>{' '}
+              <span className="text-text-primary">
+                {new Date(project.updatedAt).toLocaleString()}
+              </span>
+            </div>
+          </div>
+
+          {hasChanges && (
+            <div className="flex justify-end pt-2">
+              <Button onClick={handleSave} disabled={updateProject.isPending}>
+                {updateProject.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                Save Changes
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Proxy Configuration */}
+      <Card className="border-border bg-surface-primary">
+        <CardHeader>
+          <CardTitle className="text-base">Proxy Configuration</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-text-secondary">
+            Use these endpoints to route requests through this project's configuration.
+            Requests to these URLs will only use routes configured for this project.
+          </p>
+
+          <div className="space-y-3">
+            {proxyUrls.map(({ label, url }) => (
+              <div key={label} className="flex items-center gap-3">
+                <span className="text-sm text-text-secondary w-24">{label}:</span>
+                <code className="flex-1 text-xs bg-surface-secondary px-3 py-2 rounded border border-border text-text-primary font-mono">
+                  {url}
+                </code>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => copyToClipboard(url)}
+                >
+                  {copied ? (
+                    <Check className="h-4 w-4 text-success" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-surface-secondary rounded-lg p-4 border border-border">
+            <p className="text-xs text-text-muted">
+              <strong>Note:</strong> Project-specific proxy routing will be available after configuration.
+              Currently, all requests go through the global route configuration.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

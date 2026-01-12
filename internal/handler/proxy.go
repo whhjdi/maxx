@@ -88,19 +88,32 @@ func (h *ProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx = ctxutil.WithRequestPath(ctx, r.URL.Path)
 	ctx = ctxutil.WithIsStream(ctx, stream)
 
-	// Get or create session to get project ID
+	// Check for project ID from header (set by ProjectProxyHandler)
+	var projectID uint64
+	if pidStr := r.Header.Get("X-Maxx-Project-ID"); pidStr != "" {
+		if pid, err := strconv.ParseUint(pidStr, 10, 64); err == nil {
+			projectID = pid
+			log.Printf("[Proxy] Using project ID from header: %d", projectID)
+		}
+	}
+
+	// Get or create session to get project ID (if not already set from header)
 	session, _ := h.sessionRepo.GetBySessionID(sessionID)
 	if session != nil {
-		ctx = ctxutil.WithProjectID(ctx, session.ProjectID)
+		if projectID == 0 {
+			projectID = session.ProjectID
+		}
 	} else {
-		// Create new session
+		// Create new session with the project ID (from header or 0 for global)
 		newSession := &domain.Session{
 			SessionID:  sessionID,
 			ClientType: clientType,
-			ProjectID:  0, // Global
+			ProjectID:  projectID,
 		}
 		_ = h.sessionRepo.Create(newSession)
 	}
+
+	ctx = ctxutil.WithProjectID(ctx, projectID)
 
 	// Execute request
 	err = h.executor.Execute(ctx, w, r)

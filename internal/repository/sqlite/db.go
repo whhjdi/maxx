@@ -51,7 +51,8 @@ func (d *DB) migrate() error {
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		name TEXT NOT NULL
+		name TEXT NOT NULL,
+		slug TEXT NOT NULL DEFAULT ''
 	);
 
 	CREATE TABLE IF NOT EXISTS sessions (
@@ -219,7 +220,138 @@ func (d *DB) migrate() error {
 		}
 	}
 
+	// Migration: Add slug column to projects if it doesn't exist
+	var hasSlug bool
+	row = d.db.QueryRow(`SELECT COUNT(*) FROM pragma_table_info('projects') WHERE name='slug'`)
+	row.Scan(&hasSlug)
+
+	if !hasSlug {
+		_, err = d.db.Exec(`ALTER TABLE projects ADD COLUMN slug TEXT NOT NULL DEFAULT ''`)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Create unique index for slug (must be after ALTER TABLE in case column was just added)
+	_, _ = d.db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_projects_slug ON projects(slug) WHERE slug != ''`)
+
+	// Generate slugs for existing projects that don't have one
+	if err := d.migrateProjectSlugs(); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+// migrateProjectSlugs generates slugs for existing projects that don't have one
+func (d *DB) migrateProjectSlugs() error {
+	// Get all projects without slugs
+	rows, err := d.db.Query(`SELECT id, name FROM projects WHERE slug = ''`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	type projectInfo struct {
+		id   uint64
+		name string
+	}
+
+	var projects []projectInfo
+	for rows.Next() {
+		var p projectInfo
+		if err := rows.Scan(&p.id, &p.name); err != nil {
+			return err
+		}
+		projects = append(projects, p)
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	// Generate and update slugs
+	usedSlugs := make(map[string]bool)
+
+	// First, get all existing slugs
+	existingRows, err := d.db.Query(`SELECT slug FROM projects WHERE slug != ''`)
+	if err != nil {
+		return err
+	}
+	defer existingRows.Close()
+
+	for existingRows.Next() {
+		var slug string
+		if err := existingRows.Scan(&slug); err != nil {
+			return err
+		}
+		usedSlugs[slug] = true
+	}
+
+	for _, p := range projects {
+		baseSlug := generateSlug(p.name)
+		slug := baseSlug
+		counter := 1
+
+		// Ensure uniqueness
+		for usedSlugs[slug] {
+			counter++
+			slug = baseSlug + "-" + itoa(counter)
+		}
+
+		usedSlugs[slug] = true
+
+		_, err := d.db.Exec(`UPDATE projects SET slug = ? WHERE id = ?`, slug, p.id)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// generateSlug creates a URL-friendly slug from a name
+func generateSlug(name string) string {
+	// Convert to lowercase and replace non-alphanumeric with hyphens
+	var result []byte
+	lastWasHyphen := true // Start as true to avoid leading hyphen
+
+	for i := 0; i < len(name); i++ {
+		c := name[i]
+		if (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') {
+			result = append(result, c)
+			lastWasHyphen = false
+		} else if c >= 'A' && c <= 'Z' {
+			result = append(result, c+32) // Convert to lowercase
+			lastWasHyphen = false
+		} else if !lastWasHyphen {
+			result = append(result, '-')
+			lastWasHyphen = true
+		}
+	}
+
+	// Remove trailing hyphen
+	if len(result) > 0 && result[len(result)-1] == '-' {
+		result = result[:len(result)-1]
+	}
+
+	if len(result) == 0 {
+		return "project"
+	}
+
+	return string(result)
+}
+
+// itoa converts int to string without importing strconv
+func itoa(i int) string {
+	if i == 0 {
+		return "0"
+	}
+	var result []byte
+	for i > 0 {
+		result = append([]byte{byte('0' + i%10)}, result...)
+		i /= 10
+	}
+	return string(result)
 }
 
 // Helper functions for JSON serialization

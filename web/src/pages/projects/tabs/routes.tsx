@@ -199,20 +199,20 @@ function ClientTypeContent({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="h-[73px] flex items-center gap-md p-lg border-b border-border bg-surface-primary flex-shrink-0">
-        <ClientIcon type={clientType} size={32} />
-        <div>
-          <h2 className="text-lg font-semibold text-text-primary">{getClientName(clientType)}</h2>
-          <p className="text-xs text-text-muted">
-            {items.length} route{items.length !== 1 ? 's' : ''} configured for this project
-          </p>
-        </div>
-      </div>
-
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-lg">
+      <div className="flex-1 overflow-y-auto px-lg py-6">
         <div className="mx-auto max-w-[1400px] space-y-6">
+          {/* Client Type Header */}
+          <div className="flex items-center gap-md">
+            <ClientIcon type={clientType} size={32} />
+            <div>
+              <h2 className="text-lg font-semibold text-text-primary">{getClientName(clientType)}</h2>
+              <p className="text-xs text-text-muted">
+                {items.length} route{items.length !== 1 ? 's' : ''} configured for this project
+              </p>
+            </div>
+          </div>
+
           {/* Routes List */}
           {items.length > 0 ? (
             <DndContext
@@ -334,7 +334,7 @@ function ClientTypeSidebarItem({
     <button
       onClick={onClick}
       className={cn(
-        'sidebar-item w-full text-left relative overflow-hidden',
+        'sidebar-item text-left relative overflow-hidden',
         isActive && 'sidebar-item-active'
       )}
     >
@@ -360,7 +360,7 @@ export function RoutesTab({ project }: RoutesTabProps) {
 
   const { data: allRoutes, isLoading: routesLoading } = useRoutes();
   const { data: providers = [], isLoading: providersLoading } = useProviders();
-  const { countsByClient, countsByProviderAndClient } = useStreamingRequests();
+  const { countsByRoute, countsByProviderAndClient } = useStreamingRequests();
 
   const createRoute = useCreateRoute();
   const toggleRoute = useToggleRoute();
@@ -379,6 +379,16 @@ export function RoutesTab({ project }: RoutesTabProps) {
     return projectRoutes.filter((r) => r.clientType === clientType).length;
   };
 
+  // 获取每个 ClientType 的 streaming 请求数（只统计当前项目的路由）
+  const getStreamingCount = (clientType: ClientType) => {
+    const clientRoutes = projectRoutes.filter((r) => r.clientType === clientType);
+    let count = 0;
+    for (const route of clientRoutes) {
+      count += countsByRoute.get(route.id) || 0;
+    }
+    return count;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full p-6">
@@ -388,13 +398,11 @@ export function RoutesTab({ project }: RoutesTabProps) {
   }
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full overflow-hidden">
       {/* Left Sidebar - ClientType List */}
-      <aside className="w-1/5 min-w-[200px] flex flex-col border-r border-border bg-surface-primary">
-        <div className="h-[73px] p-lg border-b border-border flex items-center">
-          <span className="text-sm font-medium text-text-primary">Client Types</span>
-        </div>
-        <nav className="flex-1 overflow-y-auto py-md">
+      <aside className="w-[200px] shrink-0 flex flex-col border-r border-border bg-surface-primary">
+        <div className="sidebar-section-title">Client Types</div>
+        <nav className="flex-1 flex flex-col overflow-y-auto py-md">
           {CLIENT_TYPES.map((clientType) => (
             <ClientTypeSidebarItem
               key={clientType}
@@ -402,14 +410,14 @@ export function RoutesTab({ project }: RoutesTabProps) {
               isActive={activeClientType === clientType}
               onClick={() => setActiveClientType(clientType)}
               routeCount={getRouteCount(clientType)}
-              streamingCount={countsByClient.get(clientType) || 0}
+              streamingCount={getStreamingCount(clientType)}
             />
           ))}
         </nav>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 min-w-0 overflow-hidden">
         <ClientTypeContent
           clientType={activeClientType}
           project={project}

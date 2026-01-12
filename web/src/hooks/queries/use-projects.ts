@@ -14,6 +14,8 @@ export const projectKeys = {
   list: () => [...projectKeys.lists()] as const,
   details: () => [...projectKeys.all, 'detail'] as const,
   detail: (id: number) => [...projectKeys.details(), id] as const,
+  slugs: () => [...projectKeys.all, 'slug'] as const,
+  slug: (slug: string) => [...projectKeys.slugs(), slug] as const,
 };
 
 // 获取所有 Projects
@@ -24,12 +26,21 @@ export function useProjects() {
   });
 }
 
-// 获取单个 Project
+// 获取单个 Project by ID
 export function useProject(id: number) {
   return useQuery({
     queryKey: projectKeys.detail(id),
     queryFn: () => transport.getProject(id),
     enabled: id > 0,
+  });
+}
+
+// 获取单个 Project by Slug
+export function useProjectBySlug(slug: string) {
+  return useQuery({
+    queryKey: projectKeys.slug(slug),
+    queryFn: () => transport.getProjectBySlug(slug),
+    enabled: !!slug,
   });
 }
 
