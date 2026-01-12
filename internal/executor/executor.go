@@ -81,12 +81,12 @@ func (e *Executor) Execute(ctx context.Context, w http.ResponseWriter, req *http
 	}
 
 	// Capture client's original request info (before conversion to upstream format)
-	requestPath := ctxutil.GetRequestPath(ctx)
+	requestURI := ctxutil.GetRequestURI(ctx)
 	requestHeaders := ctxutil.GetRequestHeaders(ctx)
 	requestBody := ctxutil.GetRequestBody(ctx)
 	proxyReq.RequestInfo = &domain.RequestInfo{
 		Method:  req.Method,
-		URL:     requestPath,
+		URL:     requestURI,
 		Headers: flattenHeaders(requestHeaders),
 		Body:    string(requestBody),
 	}

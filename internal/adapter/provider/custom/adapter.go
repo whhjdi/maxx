@@ -67,14 +67,14 @@ func (a *CustomAdapter) Execute(ctx context.Context, w http.ResponseWriter, req 
 
 	// Build upstream URL
 	baseURL := a.getBaseURL(targetType)
-	requestPath := ctxutil.GetRequestPath(ctx)
+	requestURI := ctxutil.GetRequestURI(ctx)
 
 	// For Gemini, update model in URL path if mapping is configured
 	if clientType == domain.ClientTypeGemini && mappedModel != "" {
-		requestPath = updateGeminiModelInPath(requestPath, mappedModel)
+		requestURI = updateGeminiModelInPath(requestURI, mappedModel)
 	}
 
-	upstreamURL := buildUpstreamURL(baseURL, requestPath)
+	upstreamURL := buildUpstreamURL(baseURL, requestURI)
 
 	// Create upstream request
 	upstreamReq, err := http.NewRequestWithContext(ctx, "POST", upstreamURL, bytes.NewReader(requestBody))
