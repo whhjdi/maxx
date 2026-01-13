@@ -25,16 +25,27 @@ tasks:
     cmds:
       - pnpm dev
 
+  dev:desktop:
+    desc: Run Wails desktop application in development mode
+    cmds:
+      - wails dev
+
   install:
     desc: Install all dependencies
     cmds:
       - task: install:frontend
+      - task: install:wails
 
   install:frontend:
     desc: Install frontend dependencies
     dir: web
     cmds:
       - pnpm install
+
+  install:wails:
+    desc: Install Wails CLI
+    cmds:
+      - go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
   build:
     desc: Build complete application (frontend + backend)
