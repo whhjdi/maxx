@@ -295,7 +295,7 @@ export interface AntigravityModelQuota {
 }
 
 export interface AntigravityQuotaData {
-  models: AntigravityModelQuota[];
+  models: AntigravityModelQuota[] | null;
   lastUpdated: number;
   isForbidden: boolean;
   subscriptionTier: string; // FREE/PRO/ULTRA
@@ -311,7 +311,6 @@ export interface AntigravityTokenValidationResult {
 
 export interface AntigravityBatchValidationResult {
   results: AntigravityTokenValidationResult[];
-  total: number;
 }
 
 export interface AntigravityOAuthResult {
@@ -349,11 +348,16 @@ export type CooldownReason =
   | 'concurrent_limit'
   | 'unknown';
 
+/**
+ * Cooldown 类型 - 与 Go domain.Cooldown 同步
+ * 注意：providerName 和 remaining 需要在前端计算
+ */
 export interface Cooldown {
+  id: number;
+  createdAt: string;
+  updatedAt: string;
   providerID: number;
-  providerName: string;
   clientType: string; // 'all' for global cooldown, or specific client type
-  until: string; // ISO 8601 timestamp
-  remaining: string; // Human-readable duration like "15m30s"
-  reason: CooldownReason; // Cooldown reason
+  untilTime: string; // ISO 8601 timestamp (Go time.Time)
+  reason: CooldownReason;
 }

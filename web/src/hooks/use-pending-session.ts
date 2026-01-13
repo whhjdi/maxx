@@ -2,8 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { getTransport } from '@/lib/transport';
 import type { NewSessionPendingEvent, SessionPendingCancelledEvent } from '@/lib/transport/types';
 
-const transport = getTransport();
-
 /**
  * Hook to listen for new_session_pending events
  * Used for force project binding feature
@@ -12,6 +10,8 @@ export function usePendingSession() {
   const [pendingSession, setPendingSession] = useState<NewSessionPendingEvent | null>(null);
 
   useEffect(() => {
+    const transport = getTransport();
+
     const unsubscribePending = transport.subscribe<NewSessionPendingEvent>(
       'new_session_pending',
       (event) => {

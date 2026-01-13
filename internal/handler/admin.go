@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Bowl42/maxx-next/internal/cooldown"
-	"github.com/Bowl42/maxx-next/internal/domain"
-	"github.com/Bowl42/maxx-next/internal/service"
+	"github.com/Bowl42/maxx/internal/cooldown"
+	"github.com/Bowl42/maxx/internal/domain"
+	"github.com/Bowl42/maxx/internal/service"
 )
 
 // AdminHandler handles admin API requests over HTTP

@@ -1,4 +1,4 @@
-module github.com/Bowl42/maxx-next
+module github.com/Bowl42/maxx
 
 go 1.25.5
 

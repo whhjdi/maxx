@@ -7,7 +7,7 @@ import (
 	"github.com/emersion/go-autostart"
 )
 
-const appName = "maxx-next"
+const appName = "maxx"
 
 func getAutoStartApp() *autostart.App {
 	exePath, err := os.Executable()

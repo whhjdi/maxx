@@ -21,7 +21,7 @@ export function SettingsPage() {
         icon={Settings}
         iconClassName="text-zinc-500"
         title="Settings"
-        description="Configure your maxx-next instance"
+        description="Configure your maxx instance"
       />
 
       <div className="flex-1 overflow-y-auto p-6">

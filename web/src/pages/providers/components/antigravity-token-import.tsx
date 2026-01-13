@@ -7,8 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
-const transport = getTransport();
-
 interface AntigravityTokenImportProps {
   onBack: () => void;
   onCreateProvider: (data: CreateProviderData) => Promise<void>;
@@ -34,6 +32,7 @@ export function AntigravityTokenImport({ onBack, onCreateProvider }: Antigravity
 
   // Subscribe to OAuth result messages via WebSocket
   useEffect(() => {
+    const transport = getTransport();
     const unsubscribe = transport.subscribe<AntigravityOAuthResult>('antigravity_oauth_result', (result) => {
       // Only handle results that match our current OAuth state
       if (result.state === oauthState) {
@@ -64,7 +63,7 @@ export function AntigravityTokenImport({ onBack, onCreateProvider }: Antigravity
 
     try {
       // Request OAuth URL from backend
-      const { authURL, state } = await transport.startAntigravityOAuth();
+      const { authURL, state } = await getTransport().startAntigravityOAuth();
       setOAuthState(state);
 
       // Open OAuth window
@@ -108,7 +107,7 @@ export function AntigravityTokenImport({ onBack, onCreateProvider }: Antigravity
     setValidationResult(null);
 
     try {
-      const result = await transport.validateAntigravityToken(token.trim());
+      const result = await getTransport().validateAntigravityToken(token.trim());
       setValidationResult(result);
       if (!result.valid) {
         setError(result.error || 'Token 验证失败');
