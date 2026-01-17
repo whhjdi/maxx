@@ -157,7 +157,7 @@
     "name": "名称",
     "slugDesc": "用于 URL 和代理路径",
     "baseUrl": "基础 URL:",
-    "updated": "更新时间:",
+    "updated": "更新时间：",
     "saveChanges": "保存更改",
     "copyUrl": "复制 URL",
     "proxyConfigDesc": "使用此基础 URL 通过此项目的配置路由请求。协议（Claude、OpenAI、Gemini）会自动检测。"
@@ -420,7 +420,7 @@
     "deleteRoute": "删除此路由",
     "forceThawWarning": "强制解冻可能导致请求因根本原因未解决而再次失败。",
     "cooldownActive": "冷却保护激活",
-    "clients": "客户端:",
+    "clients": "客户端：",
     "notConfigured": "未配置",
     "clearCooldown": "清除冷却",
     "configure": "配置提供商",
@@ -458,9 +458,9 @@
   },
   "proxy": {
     "listeningOn": "监听于",
-    "copied": "已复制!",
+    "copied": "已复制！",
     "clickToCopy": "点击复制",
-    "clickToCopyTooltip": "点击复制: {{url}}",
+    "clickToCopyTooltip": "点击复制：{{url}}",
     "comingSoon": "即将到来",
     "resetsIn": "重置于"
   },
@@ -473,7 +473,7 @@
     "searchOrEnter": "搜索或输入自定义模型...",
     "selectModel": "选择模型",
     "noMatchingModels": "未找到匹配的模型。",
-    "useCustom": "使用自定义:",
+    "useCustom": "使用自定义：",
     "noModelsAvailable": "无可用模型",
     "pressToUse": "按 {{key}} 使用自定义模型名称",
     "toUseCustomModel": "使用自定义模型名称"
@@ -509,5 +509,44 @@
     "costUSD": "费用 (USD)",
     "successful": "成功",
     "failed": "失败"
+  },
+  "addProvider": {
+    "title": "添加提供商",
+    "subtitle": "选择服务提供商以开始使用",
+    "chooseProvider": "选择服务提供商",
+    "selectTemplate": "选择模板",
+    "optional": "（可选）",
+    "emptyTemplate": "空白模板",
+    "startFromScratch": "从头开始",
+    "antigravity": {
+      "name": "Antigravity",
+      "description": "零配置托管服务，支持 OAuth"
+    },
+    "kiro": {
+      "name": "Kiro (Q Developer)",
+      "description": "AWS CodeWhisperer / Q Developer"
+    },
+    "custom": {
+      "name": "自定义提供商",
+      "description": "配置您自己的 API 端点"
+    },
+    "templates": {
+      "88code": {
+        "name": "88 Code",
+        "description": "Claude + Codex + Gemini"
+      },
+      "aicodemirror": {
+        "name": "AI Code Mirror",
+        "description": "Claude + Codex + Gemini"
+      },
+      "duckcoding": {
+        "name": "DuckCoding",
+        "description": "Claude + Codex + Gemini"
+      },
+      "freeduck": {
+        "name": "Free Duck",
+        "description": "免费站点 · 只有 Claude Code"
+      }
+    }
   }
 }

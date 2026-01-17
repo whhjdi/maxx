@@ -510,5 +510,44 @@
     "costUSD": "Cost (USD)",
     "successful": "Successful",
     "failed": "Failed"
+  },
+  "addProvider": {
+    "title": "Add Provider",
+    "subtitle": "Choose a service provider to get started",
+    "chooseProvider": "Choose Service Provider",
+    "selectTemplate": "Select a Template",
+    "optional": "(Optional)",
+    "emptyTemplate": "Empty Template",
+    "startFromScratch": "Start from scratch",
+    "antigravity": {
+      "name": "Antigravity Cloud",
+      "description": "Zero-config managed service with OAuth"
+    },
+    "kiro": {
+      "name": "Kiro (Q Developer)",
+      "description": "AWS CodeWhisperer / Q Developer"
+    },
+    "custom": {
+      "name": "Custom Provider",
+      "description": "Configure your own API endpoint"
+    },
+    "templates": {
+      "88code": {
+        "name": "88 Code",
+        "description": "Claude + Codex + Gemini"
+      },
+      "aicodemirror": {
+        "name": "AI Code Mirror",
+        "description": "Claude + Codex + Gemini"
+      },
+      "duckcoding": {
+        "name": "DuckCoding",
+        "description": "Claude + Codex + Gemini"
+      },
+      "freeduck": {
+        "name": "Free Duck",
+        "description": "Free site · Claude Code only"
+      }
+    }
   }
 }
