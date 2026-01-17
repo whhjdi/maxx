@@ -158,7 +158,7 @@ export function ProviderRow({ provider, stats, streamingCount, onClick }: Provid
         className="relative z-10 w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-muted border border-border shadow-inner group-hover:shadow-none transition-shadow duration-300"
         style={{ color }}
       >
-        <div className="absolute inset-0 opacity-10" style={{ backgroundColor: color }} />
+        <div className="absolute inset-0 opacity-10 rounded-xl" style={{ backgroundColor: color }} />
         <TypeIcon size={24} />
       </div>
 
