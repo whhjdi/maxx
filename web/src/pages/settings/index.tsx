@@ -1,23 +1,15 @@
-import { useState, useEffect } from 'react'
-import { Settings, Moon, Sun, Monitor, Laptop, FolderOpen, Database } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
-import { useTheme } from '@/components/theme-provider'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Button,
-  Input,
-  Switch,
-} from '@/components/ui'
-import { PageHeader } from '@/components/layout/page-header'
-import { useSettings, useUpdateSetting } from '@/hooks/queries'
+import { useState, useEffect } from 'react';
+import { Settings, Moon, Sun, Monitor, Laptop, FolderOpen, Database } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '@/components/theme-provider';
+import { Card, CardContent, CardHeader, CardTitle, Button, Input, Switch } from '@/components/ui';
+import { PageHeader } from '@/components/layout/page-header';
+import { useSettings, useUpdateSetting } from '@/hooks/queries';
 
-type Theme = 'light' | 'dark' | 'system'
+type Theme = 'light' | 'dark' | 'system';
 
 export function SettingsPage() {
-  const { t } = useTranslation()
+  const { t } = useTranslation();
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -36,23 +28,23 @@ export function SettingsPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function GeneralSection() {
-  const { theme, setTheme } = useTheme()
-  const { t, i18n } = useTranslation()
+  const { theme, setTheme } = useTheme();
+  const { t, i18n } = useTranslation();
 
   const themes: { value: Theme; label: string; icon: typeof Sun }[] = [
     { value: 'light', label: t('settings.theme.light'), icon: Sun },
     { value: 'dark', label: t('settings.theme.dark'), icon: Moon },
     { value: 'system', label: t('settings.theme.system'), icon: Laptop },
-  ]
+  ];
 
   const languages = [
     { value: 'en', label: t('settings.languages.en') },
     { value: 'zh', label: t('settings.languages.zh') },
-  ]
+  ];
 
   return (
     <Card className="border-border bg-card">
@@ -98,63 +90,64 @@ function GeneralSection() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function DataRetentionSection() {
-  const { data: settings, isLoading } = useSettings()
-  const updateSetting = useUpdateSetting()
-  const { t } = useTranslation()
+  const { data: settings, isLoading } = useSettings();
+  const updateSetting = useUpdateSetting();
+  const { t } = useTranslation();
 
-  const requestRetentionDays = settings?.request_retention_days ?? '7'
-  const statsRetentionDays = settings?.stats_retention_days ?? '30'
+  const requestRetentionDays = settings?.request_retention_days ?? '7';
+  const statsRetentionDays = settings?.stats_retention_days ?? '30';
 
-  const [requestDraft, setRequestDraft] = useState('')
-  const [statsDraft, setStatsDraft] = useState('')
-  const [initialized, setInitialized] = useState(false)
+  const [requestDraft, setRequestDraft] = useState('');
+  const [statsDraft, setStatsDraft] = useState('');
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !initialized) {
-      setRequestDraft(requestRetentionDays)
-      setStatsDraft(statsRetentionDays)
-      setInitialized(true)
+      setRequestDraft(requestRetentionDays);
+      setStatsDraft(statsRetentionDays);
+      setInitialized(true);
     }
-  }, [isLoading, initialized, requestRetentionDays, statsRetentionDays])
+  }, [isLoading, initialized, requestRetentionDays, statsRetentionDays]);
 
   useEffect(() => {
     if (initialized) {
-      setRequestDraft(requestRetentionDays)
+      setRequestDraft(requestRetentionDays);
     }
-  }, [requestRetentionDays, initialized])
+  }, [requestRetentionDays, initialized]);
 
   useEffect(() => {
     if (initialized) {
-      setStatsDraft(statsRetentionDays)
+      setStatsDraft(statsRetentionDays);
     }
-  }, [statsRetentionDays, initialized])
+  }, [statsRetentionDays, initialized]);
 
-  const hasChanges = initialized && (requestDraft !== requestRetentionDays || statsDraft !== statsRetentionDays)
+  const hasChanges =
+    initialized && (requestDraft !== requestRetentionDays || statsDraft !== statsRetentionDays);
 
   const handleSave = async () => {
-    const requestNum = parseInt(requestDraft, 10)
-    const statsNum = parseInt(statsDraft, 10)
+    const requestNum = parseInt(requestDraft, 10);
+    const statsNum = parseInt(statsDraft, 10);
 
     if (!isNaN(requestNum) && requestNum >= 0 && requestDraft !== requestRetentionDays) {
       await updateSetting.mutateAsync({
         key: 'request_retention_days',
         value: requestDraft,
-      })
+      });
     }
 
     if (!isNaN(statsNum) && statsNum >= 0 && statsDraft !== statsRetentionDays) {
       await updateSetting.mutateAsync({
         key: 'stats_retention_days',
         value: statsDraft,
-      })
+      });
     }
-  }
+  };
 
-  if (isLoading || !initialized) return null
+  if (isLoading || !initialized) return null;
 
   return (
     <Card className="border-border bg-card">
@@ -167,11 +160,7 @@ function DataRetentionSection() {
             </CardTitle>
             <p className="text-xs text-muted-foreground mt-1">{t('settings.retentionDaysHint')}</p>
           </div>
-          <Button
-            onClick={handleSave}
-            disabled={!hasChanges || updateSetting.isPending}
-            size="sm"
-          >
+          <Button onClick={handleSave} disabled={!hasChanges || updateSetting.isPending} size="sm">
             {updateSetting.isPending ? t('common.saving') : t('common.save')}
           </Button>
         </div>
@@ -185,7 +174,7 @@ function DataRetentionSection() {
             <Input
               type="number"
               value={requestDraft}
-              onChange={e => setRequestDraft(e.target.value)}
+              onChange={(e) => setRequestDraft(e.target.value)}
               className="w-24"
               min={0}
               disabled={updateSetting.isPending}
@@ -199,7 +188,7 @@ function DataRetentionSection() {
             <Input
               type="number"
               value={statsDraft}
-              onChange={e => setStatsDraft(e.target.value)}
+              onChange={(e) => setStatsDraft(e.target.value)}
               className="w-24"
               min={0}
               disabled={updateSetting.isPending}
@@ -209,35 +198,35 @@ function DataRetentionSection() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function ForceProjectSection() {
-  const { data: settings, isLoading } = useSettings()
-  const updateSetting = useUpdateSetting()
-  const { t } = useTranslation()
+  const { data: settings, isLoading } = useSettings();
+  const updateSetting = useUpdateSetting();
+  const { t } = useTranslation();
 
-  const forceProjectEnabled = settings?.force_project_binding === 'true'
-  const timeout = settings?.force_project_timeout || '30'
+  const forceProjectEnabled = settings?.force_project_binding === 'true';
+  const timeout = settings?.force_project_timeout || '30';
 
   const handleToggle = async (checked: boolean) => {
     await updateSetting.mutateAsync({
       key: 'force_project_binding',
       value: checked ? 'true' : 'false',
-    })
-  }
+    });
+  };
 
   const handleTimeoutChange = async (value: string) => {
-    const numValue = parseInt(value, 10)
+    const numValue = parseInt(value, 10);
     if (numValue >= 5 && numValue <= 300) {
       await updateSetting.mutateAsync({
         key: 'force_project_timeout',
         value: value,
-      })
+      });
     }
-  }
+  };
 
-  if (isLoading) return null
+  if (isLoading) return null;
 
   return (
     <Card className="border-border bg-card">
@@ -272,7 +261,7 @@ function ForceProjectSection() {
             <Input
               type="number"
               value={timeout}
-              onChange={e => handleTimeoutChange(e.target.value)}
+              onChange={(e) => handleTimeoutChange(e.target.value)}
               className="w-24"
               min={5}
               max={300}
@@ -283,7 +272,7 @@ function ForceProjectSection() {
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
 
-export default SettingsPage
+export default SettingsPage;

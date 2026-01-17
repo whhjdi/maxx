@@ -1,8 +1,8 @@
-import { Server } from 'lucide-react'
+import { Server } from 'lucide-react';
 
 interface EmptyStateProps {
-  message: string
-  icon?: React.ReactNode
+  message: string;
+  icon?: React.ReactNode;
 }
 
 export function EmptyState({ message, icon }: EmptyStateProps) {
@@ -11,5 +11,5 @@ export function EmptyState({ message, icon }: EmptyStateProps) {
       {icon || <Server className="h-12 w-12 mb-3 opacity-10" />}
       <p className="text-sm font-medium">{message}</p>
     </div>
-  )
+  );
 }

@@ -7,20 +7,16 @@ import {
   CheckCircle2,
   FilePlus,
   Cloud,
-} from 'lucide-react'
-import {
-  quickTemplates,
-  PROVIDER_TYPE_CONFIGS,
-  type ProviderFormData,
-} from '../types'
-import { Button } from '@/components/ui'
+} from 'lucide-react';
+import { quickTemplates, PROVIDER_TYPE_CONFIGS, type ProviderFormData } from '../types';
+import { Button } from '@/components/ui';
 
 interface SelectTypeStepProps {
-  formData: ProviderFormData
-  onSelectType: (type: 'custom' | 'antigravity' | 'kiro') => void
-  onApplyTemplate: (templateId: string) => void
-  onSkipToConfig: () => void
-  onBack: () => void
+  formData: ProviderFormData;
+  onSelectType: (type: 'custom' | 'antigravity' | 'kiro') => void;
+  onApplyTemplate: (templateId: string) => void;
+  onSkipToConfig: () => void;
+  onBack: () => void;
 }
 
 export function SelectTypeStep({
@@ -31,8 +27,8 @@ export function SelectTypeStep({
   onBack,
 }: SelectTypeStepProps) {
   // 计算可见的 provider 数量
-  const visibleProviderCount = Object.values(PROVIDER_TYPE_CONFIGS).filter(c => !c.hidden).length
-  const gridCols = visibleProviderCount <= 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'
+  const visibleProviderCount = Object.values(PROVIDER_TYPE_CONFIGS).filter((c) => !c.hidden).length;
+  const gridCols = visibleProviderCount <= 2 ? 'md:grid-cols-2' : 'md:grid-cols-3';
 
   return (
     <div className="flex flex-col h-full">
@@ -41,9 +37,7 @@ export function SelectTypeStep({
           <ChevronLeft size={20} />
         </Button>
         <div>
-          <h2 className="text-headline font-semibold text-foreground">
-            Add Provider
-          </h2>
+          <h2 className="text-headline font-semibold text-foreground">Add Provider</h2>
           <p className="text-caption text-muted-foreground">
             Choose a service provider to get started
           </p>
@@ -88,34 +82,34 @@ export function SelectTypeStep({
               </Button>
 
               {!PROVIDER_TYPE_CONFIGS.kiro.hidden && (
-              <Button
-                onClick={() => onSelectType('kiro')}
-                variant="ghost"
-                className={`group p-0 rounded-lg border text-left transition-all h-auto w-full ${
-                  formData.type === 'kiro'
-                    ? 'border-provider-kiro bg-provider-kiro/10'
-                    : 'border-border bg-card hover:bg-muted'
-                }`}
-              >
-                <div className="p-5 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-md bg-provider-kiro/15 flex items-center justify-center shrink-0">
-                    <Cloud size={24} className="text-provider-kiro" />
-                  </div>
+                <Button
+                  onClick={() => onSelectType('kiro')}
+                  variant="ghost"
+                  className={`group p-0 rounded-lg border text-left transition-all h-auto w-full ${
+                    formData.type === 'kiro'
+                      ? 'border-provider-kiro bg-provider-kiro/10'
+                      : 'border-border bg-card hover:bg-muted'
+                  }`}
+                >
+                  <div className="p-5 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-md bg-provider-kiro/15 flex items-center justify-center shrink-0">
+                      <Cloud size={24} className="text-provider-kiro" />
+                    </div>
 
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-headline font-semibold text-foreground mb-1">
-                      Kiro (Q Developer)
-                    </h3>
-                    <p className="text-caption text-muted-foreground">
-                      AWS CodeWhisperer / Q Developer
-                    </p>
-                  </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-headline font-semibold text-foreground mb-1">
+                        Kiro (Q Developer)
+                      </h3>
+                      <p className="text-caption text-muted-foreground">
+                        AWS CodeWhisperer / Q Developer
+                      </p>
+                    </div>
 
-                  {formData.type === 'kiro' && (
-                    <CheckCircle2 size={20} className="text-provider-kiro shrink-0" />
-                  )}
-                </div>
-              </Button>
+                    {formData.type === 'kiro' && (
+                      <CheckCircle2 size={20} className="text-provider-kiro shrink-0" />
+                    )}
+                  </div>
+                </Button>
               )}
 
               <Button
@@ -155,9 +149,7 @@ export function SelectTypeStep({
               <div className="flex items-center justify-between border-b border-border pb-2">
                 <h3 className="text-lg font-semibold text-foreground">
                   2. Select a Template{' '}
-                  <span className="text-muted-foreground font-normal text-sm ml-2">
-                    (Optional)
-                  </span>
+                  <span className="text-muted-foreground font-normal text-sm ml-2">(Optional)</span>
                 </h3>
               </div>
 
@@ -185,16 +177,14 @@ export function SelectTypeStep({
                       <h4 className="text-body font-semibold text-foreground mb-0.5">
                         Empty Template
                       </h4>
-                      <p className="text-caption text-muted-foreground">
-                        Start from scratch
-                      </p>
+                      <p className="text-caption text-muted-foreground">Start from scratch</p>
                     </div>
                   </div>
                 </Button>
 
-                {quickTemplates.map(template => {
-                  const Icon = template.icon === 'grid' ? Grid3X3 : Layers
-                  const isSelected = formData.selectedTemplate === template.id
+                {quickTemplates.map((template) => {
+                  const Icon = template.icon === 'grid' ? Grid3X3 : Layers;
+                  const isSelected = formData.selectedTemplate === template.id;
                   return (
                     <Button
                       key={template.id}
@@ -211,9 +201,7 @@ export function SelectTypeStep({
                         <div className="flex items-center justify-between w-full">
                           <div
                             className={`w-10 h-10 rounded-md flex items-center justify-center transition-colors overflow-hidden ${
-                              isSelected
-                                ? 'bg-primary/15'
-                                : 'bg-muted group-hover:bg-primary/10'
+                              isSelected ? 'bg-primary/15' : 'bg-muted group-hover:bg-primary/10'
                             }`}
                           >
                             {template.logoUrl ? (
@@ -233,9 +221,7 @@ export function SelectTypeStep({
                               />
                             )}
                           </div>
-                          {isSelected && (
-                            <CheckCircle2 size={18} className="text-primary" />
-                          )}
+                          {isSelected && <CheckCircle2 size={18} className="text-primary" />}
                         </div>
 
                         <div className="flex-1">
@@ -252,7 +238,7 @@ export function SelectTypeStep({
                         </div>
                       </div>
                     </Button>
-                  )
+                  );
                 })}
               </div>
             </div>
@@ -260,5 +246,5 @@ export function SelectTypeStep({
         </div>
       </div>
     </div>
-  )
+  );
 }

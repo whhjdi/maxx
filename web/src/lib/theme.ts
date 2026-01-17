@@ -118,11 +118,9 @@ export const shadows = {
  */
 export function getComputedColor(
   varName: ColorVariable,
-  element: HTMLElement = document.documentElement
+  element: HTMLElement = document.documentElement,
 ): string {
-  return getComputedStyle(element)
-    .getPropertyValue(`--${varName}`)
-    .trim();
+  return getComputedStyle(element).getPropertyValue(`--${varName}`).trim();
 }
 
 /**

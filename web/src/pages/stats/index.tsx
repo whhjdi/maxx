@@ -61,16 +61,19 @@ function aggregateByHour(stats: UsageStats[] | undefined, timeRange: TimeRange) 
   const now = new Date();
   const isHourly = timeRange === '24h';
   const pointsToShow = timeRange === '24h' ? 24 : timeRange === '7d' ? 7 : 30;
-  const timeMap = new Map<string, {
-    hour: string;
-    successful: number;
-    failed: number;
-    inputTokens: number;
-    outputTokens: number;
-    cacheRead: number;
-    cacheWrite: number;
-    cost: number;
-  }>();
+  const timeMap = new Map<
+    string,
+    {
+      hour: string;
+      successful: number;
+      failed: number;
+      inputTokens: number;
+      outputTokens: number;
+      cacheRead: number;
+      cacheWrite: number;
+      cost: number;
+    }
+  >();
 
   // 生成时间键的辅助函数（使用本地时间）
   const getTimeKey = (date: Date, hourly: boolean): string => {
@@ -170,14 +173,14 @@ function formatNumber(value: number): string {
     // >= 1M
     const formatted = value / 1000000;
     return absValue >= 10000000
-      ? `${Math.round(formatted)}M`  // >= 10M: 不显示小数
-      : `${formatted.toFixed(1)}M`;   // < 10M: 显示 1 位小数
+      ? `${Math.round(formatted)}M` // >= 10M: 不显示小数
+      : `${formatted.toFixed(1)}M`; // < 10M: 显示 1 位小数
   } else if (absValue >= 1000) {
     // >= 1K
     const formatted = value / 1000;
     return absValue >= 10000
-      ? `${Math.round(formatted)}K`   // >= 10K: 不显示小数
-      : `${formatted.toFixed(1)}K`;    // < 10K: 显示 1 位小数
+      ? `${Math.round(formatted)}K` // >= 10K: 不显示小数
+      : `${formatted.toFixed(1)}K`; // < 10K: 显示 1 位小数
   } else {
     // < 1K: 显示原数字
     return Math.round(value).toString();
@@ -246,7 +249,10 @@ export function StatsPage() {
             onChange={setProviderId}
             options={[
               { value: 'all', label: t('stats.allProviders') },
-              ...(providers?.map((p) => ({ value: String(p.id), label: p.name })) || []),
+              ...(providers?.map((p) => ({
+                value: String(p.id),
+                label: p.name,
+              })) || []),
             ]}
           />
           <FilterSelect
@@ -255,7 +261,10 @@ export function StatsPage() {
             onChange={setProjectId}
             options={[
               { value: 'all', label: t('stats.allProjects') },
-              ...(projects?.map((p) => ({ value: String(p.id), label: p.name })) || []),
+              ...(projects?.map((p) => ({
+                value: String(p.id),
+                label: p.name,
+              })) || []),
             ]}
           />
           <FilterSelect
@@ -276,19 +285,18 @@ export function StatsPage() {
             onChange={setApiTokenId}
             options={[
               { value: 'all', label: t('stats.allTokens') },
-              ...(apiTokens?.map((t) => ({ value: String(t.id), label: t.name })) || []),
+              ...(apiTokens?.map((t) => ({
+                value: String(t.id),
+                label: t.name,
+              })) || []),
             ]}
           />
         </div>
 
         {isLoading ? (
-          <div className="text-center text-muted-foreground py-8">
-            {t('common.loading')}
-          </div>
+          <div className="text-center text-muted-foreground py-8">{t('common.loading')}</div>
         ) : chartData.length === 0 ? (
-          <div className="text-center text-muted-foreground py-8">
-            {t('common.noData')}
-          </div>
+          <div className="text-center text-muted-foreground py-8">{t('common.noData')}</div>
         ) : (
           <Card className="flex flex-col flex-1 min-h-0">
             <CardHeader className="flex flex-row items-center justify-between flex-shrink-0">
@@ -302,26 +310,76 @@ export function StatsPage() {
               </Tabs>
             </CardHeader>
             <CardContent className="flex-1 min-h-0 overflow-x-auto">
-              <div style={{ minWidth: `${Math.max(chartData.length * 60, 600)}px`, height: '100%' }}>
+              <div
+                style={{
+                  minWidth: `${Math.max(chartData.length * 60, 600)}px`,
+                  height: '100%',
+                }}
+              >
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis dataKey="hour" className="text-xs" />
-                    <YAxis className="text-xs" tickFormatter={chartView === 'cost' ? formatCost : formatNumber} />
-                    <Tooltip formatter={(value) => chartView === 'cost' ? formatCost(value as number) : formatNumber(value as number)} />
+                    <YAxis
+                      className="text-xs"
+                      tickFormatter={chartView === 'cost' ? formatCost : formatNumber}
+                    />
+                    <Tooltip
+                      formatter={(value) =>
+                        chartView === 'cost'
+                          ? formatCost(value as number)
+                          : formatNumber(value as number)
+                      }
+                    />
                     <Legend />
                     {chartView === 'requests' && (
                       <>
-                        <Bar dataKey="successful" name={t('stats.successful')} stackId="a" fill="#22c55e" barSize={40} />
-                        <Bar dataKey="failed" name={t('stats.failed')} stackId="a" fill="#ef4444" barSize={40} />
+                        <Bar
+                          dataKey="successful"
+                          name={t('stats.successful')}
+                          stackId="a"
+                          fill="#22c55e"
+                          barSize={40}
+                        />
+                        <Bar
+                          dataKey="failed"
+                          name={t('stats.failed')}
+                          stackId="a"
+                          fill="#ef4444"
+                          barSize={40}
+                        />
                       </>
                     )}
                     {chartView === 'tokens' && (
                       <>
-                        <Bar dataKey="inputTokens" name={t('stats.inputTokens')} stackId="a" fill="#3b82f6" barSize={40} />
-                        <Bar dataKey="outputTokens" name={t('stats.outputTokens')} stackId="a" fill="#8b5cf6" barSize={40} />
-                        <Bar dataKey="cacheRead" name={t('stats.cacheRead')} stackId="a" fill="#22c55e" barSize={40} />
-                        <Bar dataKey="cacheWrite" name={t('stats.cacheWrite')} stackId="a" fill="#f59e0b" barSize={40} />
+                        <Bar
+                          dataKey="inputTokens"
+                          name={t('stats.inputTokens')}
+                          stackId="a"
+                          fill="#3b82f6"
+                          barSize={40}
+                        />
+                        <Bar
+                          dataKey="outputTokens"
+                          name={t('stats.outputTokens')}
+                          stackId="a"
+                          fill="#8b5cf6"
+                          barSize={40}
+                        />
+                        <Bar
+                          dataKey="cacheRead"
+                          name={t('stats.cacheRead')}
+                          stackId="a"
+                          fill="#22c55e"
+                          barSize={40}
+                        />
+                        <Bar
+                          dataKey="cacheWrite"
+                          name={t('stats.cacheWrite')}
+                          stackId="a"
+                          fill="#f59e0b"
+                          barSize={40}
+                        />
                       </>
                     )}
                     {chartView === 'cost' && (

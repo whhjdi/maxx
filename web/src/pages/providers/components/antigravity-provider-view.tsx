@@ -1,27 +1,15 @@
-import { useState, useEffect } from 'react'
-import {
-  Wand2,
-  Mail,
-  ChevronLeft,
-  Trash2,
-  RefreshCw,
-  Clock,
-  Lock,
-} from 'lucide-react'
-import { useTranslation } from 'react-i18next'
-import { ClientIcon } from '@/components/icons/client-icons'
-import type {
-  Provider,
-  AntigravityQuotaData,
-  AntigravityModelQuota,
-} from '@/lib/transport'
-import { getTransport } from '@/lib/transport'
-import { ANTIGRAVITY_COLOR } from '../types'
+import { useState, useEffect } from 'react';
+import { Wand2, Mail, ChevronLeft, Trash2, RefreshCw, Clock, Lock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { ClientIcon } from '@/components/icons/client-icons';
+import type { Provider, AntigravityQuotaData, AntigravityModelQuota } from '@/lib/transport';
+import { getTransport } from '@/lib/transport';
+import { ANTIGRAVITY_COLOR } from '../types';
 
 interface AntigravityProviderViewProps {
-  provider: Provider
-  onDelete: () => void
-  onClose: () => void
+  provider: Provider;
+  onDelete: () => void;
+  onClose: () => void;
 }
 
 // 友好的模型名称
@@ -30,39 +18,39 @@ const modelDisplayNames: Record<string, string> = {
   'gemini-3-flash': 'Gemini 3 Flash',
   'gemini-3-pro-image': 'Gemini 3 Pro Image',
   'claude-sonnet-4-5-thinking': 'Claude Sonnet 4.5',
-}
+};
 
 // 配额条的颜色
 function getQuotaColor(percentage: number): string {
-  if (percentage >= 50) return 'bg-success'
-  if (percentage >= 20) return 'bg-warning'
-  return 'bg-error'
+  if (percentage >= 50) return 'bg-success';
+  if (percentage >= 20) return 'bg-warning';
+  return 'bg-error';
 }
 
 // 格式化重置时间
 function formatResetTime(resetTime: string, t: (key: string) => string): string {
-  if (!resetTime) return t('proxy.comingSoon')
-  
-  try {
-    const reset = new Date(resetTime)
-    const now = new Date()
-    const diff = reset.getTime() - now.getTime()
-  
-    if (diff <= 0) return t('proxy.comingSoon')
+  if (!resetTime) return t('proxy.comingSoon');
 
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+  try {
+    const reset = new Date(resetTime);
+    const now = new Date();
+    const diff = reset.getTime() - now.getTime();
+
+    if (diff <= 0) return t('proxy.comingSoon');
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
     if (hours > 24) {
-      const days = Math.floor(hours / 24)
-      return `${days}d ${hours % 24}h`
+      const days = Math.floor(hours / 24);
+      return `${days}d ${hours % 24}h`;
     }
     if (hours > 0) {
-      return `${hours}h ${minutes}m`
+      return `${hours}h ${minutes}m`;
     }
-    return `${minutes}m`
+    return `${minutes}m`;
   } catch {
-    return '-'
+    return '-';
   }
 }
 
@@ -72,7 +60,7 @@ function SubscriptionBadge({ tier }: { tier: string }) {
     ULTRA: 'bg-gradient-to-r from-purple-500 to-pink-500 text-white',
     PRO: 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white',
     FREE: 'bg-gray-500/20 text-gray-400',
-  }
+  };
 
   return (
     <span
@@ -80,21 +68,19 @@ function SubscriptionBadge({ tier }: { tier: string }) {
     >
       {tier || 'FREE'}
     </span>
-  )
+  );
 }
 
 // 模型配额卡片
 function ModelQuotaCard({ model }: { model: AntigravityModelQuota }) {
-  const { t } = useTranslation()
-  const displayName = modelDisplayNames[model.name] || model.name
-  const color = getQuotaColor(model.percentage)
+  const { t } = useTranslation();
+  const displayName = modelDisplayNames[model.name] || model.name;
+  const color = getQuotaColor(model.percentage);
 
   return (
     <div className="bg-card border border-border rounded-xl p-4">
       <div className="flex items-center justify-between mb-3">
-        <span className="font-medium text-foreground text-sm">
-          {displayName}
-        </span>
+        <span className="font-medium text-foreground text-sm">{displayName}</span>
         <span className="text-xs text-muted-foreground flex items-center gap-1">
           <Clock size={12} />
           {t('proxy.resetsIn')} {formatResetTime(model.resetTime, t)}
@@ -112,7 +98,7 @@ function ModelQuotaCard({ model }: { model: AntigravityModelQuota }) {
         </span>
       </div>
     </div>
-  )
+  );
 }
 
 export function AntigravityProviderView({
@@ -120,29 +106,26 @@ export function AntigravityProviderView({
   onDelete,
   onClose,
 }: AntigravityProviderViewProps) {
-  const [quota, setQuota] = useState<AntigravityQuotaData | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [quota, setQuota] = useState<AntigravityQuotaData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchQuota = async (forceRefresh = false) => {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
-      const data = await getTransport().getAntigravityProviderQuota(
-        provider.id,
-        forceRefresh
-      )
-      setQuota(data)
+      const data = await getTransport().getAntigravityProviderQuota(provider.id, forceRefresh);
+      setQuota(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch quota')
+      setError(err instanceof Error ? err.message : 'Failed to fetch quota');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchQuota(false)
-  }, [provider.id]) // eslint-disable-line react-hooks/exhaustive-deps
+    fetchQuota(false);
+  }, [provider.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="flex flex-col h-full">
@@ -155,12 +138,8 @@ export function AntigravityProviderView({
             <ChevronLeft size={20} />
           </button>
           <div>
-            <h2 className="text-headline font-semibold text-foreground">
-              {provider.name}
-            </h2>
-            <p className="text-caption text-muted-foreground">
-              Antigravity Provider
-            </p>
+            <h2 className="text-headline font-semibold text-foreground">{provider.name}</h2>
+            <p className="text-caption text-muted-foreground">Antigravity Provider</p>
           </div>
         </div>
         <button
@@ -186,12 +165,8 @@ export function AntigravityProviderView({
                 </div>
                 <div>
                   <div className="flex items-center gap-3">
-                    <h3 className="text-xl font-bold text-foreground">
-                      {provider.name}
-                    </h3>
-                    {quota?.subscriptionTier && (
-                      <SubscriptionBadge tier={quota.subscriptionTier} />
-                    )}
+                    <h3 className="text-xl font-bold text-foreground">{provider.name}</h3>
+                    {quota?.subscriptionTier && <SubscriptionBadge tier={quota.subscriptionTier} />}
                   </div>
                   <div className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1">
                     <Mail size={14} />
@@ -225,18 +200,13 @@ export function AntigravityProviderView({
           {/* Quota Section */}
           <div>
             <div className="flex items-center justify-between mb-4 border-b border-border pb-2">
-              <h4 className="text-lg font-semibold text-foreground">
-                Model Quotas
-              </h4>
+              <h4 className="text-lg font-semibold text-foreground">Model Quotas</h4>
               <button
                 onClick={() => fetchQuota(true)}
                 disabled={loading}
                 className="btn bg-muted hover:bg-accent text-foreground flex items-center gap-2 text-sm"
               >
-                <RefreshCw
-                  size={14}
-                  className={loading ? 'animate-spin' : ''}
-                />
+                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
                 Refresh
               </button>
             </div>
@@ -255,14 +225,13 @@ export function AntigravityProviderView({
                 <div>
                   <h5 className="font-semibold text-error">Access Forbidden</h5>
                   <p className="text-sm text-error/80">
-                    This account has been restricted. Please check your Google
-                    Cloud account status.
+                    This account has been restricted. Please check your Google Cloud account status.
                   </p>
                 </div>
               </div>
             ) : quota?.models && quota.models.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {quota.models.map(model => (
+                {quota.models.map((model) => (
                   <ModelQuotaCard key={model.name} model={model} />
                 ))}
               </div>
@@ -272,7 +241,7 @@ export function AntigravityProviderView({
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[1, 2, 3, 4].map(i => (
+                {[1, 2, 3, 4].map((i) => (
                   <div
                     key={i}
                     className="bg-card border border-border rounded-xl p-4 animate-pulse"
@@ -286,8 +255,7 @@ export function AntigravityProviderView({
 
             {quota?.lastUpdated && (
               <p className="text-xs text-muted-foreground mt-4 text-right">
-                Last updated:{' '}
-                {new Date(quota.lastUpdated * 1000).toLocaleString()}
+                Last updated: {new Date(quota.lastUpdated * 1000).toLocaleString()}
               </p>
             )}
           </div>
@@ -299,16 +267,14 @@ export function AntigravityProviderView({
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {provider.supportedClientTypes?.length > 0 ? (
-                provider.supportedClientTypes.map(ct => (
+                provider.supportedClientTypes.map((ct) => (
                   <div
                     key={ct}
                     className="flex items-center gap-3 bg-card border border-border rounded-xl p-4 shadow-sm"
                   >
                     <ClientIcon type={ct} size={28} />
                     <div>
-                      <div className="text-sm font-semibold text-foreground capitalize">
-                        {ct}
-                      </div>
+                      <div className="text-sm font-semibold text-foreground capitalize">{ct}</div>
                       <div className="text-xs text-muted-foreground">Enabled</div>
                     </div>
                   </div>
@@ -323,5 +289,5 @@ export function AntigravityProviderView({
         </div>
       </div>
     </div>
-  )
+  );
 }

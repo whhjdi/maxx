@@ -21,19 +21,17 @@ function getInitialLanguage(): string {
   return getBrowserLanguage();
 }
 
-i18n
-  .use(initReactI18next)
-  .init({
-    resources: {
-      en: { translation: en },
-      zh: { translation: zh },
-    },
-    lng: getInitialLanguage(),
-    fallbackLng: 'en',
-    interpolation: {
-      escapeValue: false, // React 已经处理了 XSS
-    },
-  });
+i18n.use(initReactI18next).init({
+  resources: {
+    en: { translation: en },
+    zh: { translation: zh },
+  },
+  lng: getInitialLanguage(),
+  fallbackLng: 'en',
+  interpolation: {
+    escapeValue: false, // React 已经处理了 XSS
+  },
+});
 
 // 语言变化时保存到 localStorage
 i18n.on('languageChanged', (lng) => {

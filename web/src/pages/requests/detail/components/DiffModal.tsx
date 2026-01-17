@@ -1,54 +1,47 @@
-import { useMemo, useEffect } from 'react'
-import * as Diff from 'diff'
-import { Button } from '@/components/ui'
-import { GitCompare, X } from 'lucide-react'
+import { useMemo, useEffect } from 'react';
+import * as Diff from 'diff';
+import { Button } from '@/components/ui';
+import { GitCompare, X } from 'lucide-react';
 
 interface DiffModalProps {
-  isOpen: boolean
-  onClose: () => void
-  title: string
-  leftContent: string
-  rightContent: string
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  leftContent: string;
+  rightContent: string;
 }
 
-export function DiffModal({
-  isOpen,
-  onClose,
-  title,
-  leftContent,
-  rightContent,
-}: DiffModalProps) {
+export function DiffModal({ isOpen, onClose, title, leftContent, rightContent }: DiffModalProps) {
   // Compute diff (must be before any conditional returns)
   const diffResult = useMemo(() => {
-    return Diff.diffLines(leftContent, rightContent)
-  }, [leftContent, rightContent])
+    return Diff.diffLines(leftContent, rightContent);
+  }, [leftContent, rightContent]);
 
   // Handle ESC key press
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        e.stopPropagation() // Prevent event from bubbling to parent
-        onClose()
+        e.stopPropagation(); // Prevent event from bubbling to parent
+        onClose();
       }
-    }
+    };
 
-    window.addEventListener('keydown', handleKeyDown, { capture: true })
-    return () =>
-      window.removeEventListener('keydown', handleKeyDown, { capture: true })
-  }, [isOpen, onClose])
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
+  }, [isOpen, onClose]);
 
   // Early return AFTER all hooks
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   // Handle backdrop click
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
-      e.stopPropagation()
-      onClose()
+      e.stopPropagation();
+      onClose();
     }
-  }
+  };
 
   return (
     <div
@@ -98,28 +91,28 @@ export function DiffModal({
             {diffResult.map((part, index) => {
               const lines = part.value.split('\n').filter((line, idx, arr) => {
                 // Remove the last empty line if it exists
-                return idx < arr.length - 1 || line !== ''
-              })
+                return idx < arr.length - 1 || line !== '';
+              });
 
               return lines.map((line, lineIndex) => {
-                let bgColor = ''
-                let textColor = 'text-foreground'
-                let prefix = ' '
-                let borderColor = 'border-border/30'
+                let bgColor = '';
+                let textColor = 'text-foreground';
+                let prefix = ' ';
+                let borderColor = 'border-border/30';
 
                 if (part.added) {
-                  bgColor = 'bg-green-500/10'
-                  textColor = 'text-green-400'
-                  prefix = '+'
-                  borderColor = 'border-green-500/30'
+                  bgColor = 'bg-green-500/10';
+                  textColor = 'text-green-400';
+                  prefix = '+';
+                  borderColor = 'border-green-500/30';
                 } else if (part.removed) {
-                  bgColor = 'bg-red-500/10'
-                  textColor = 'text-red-400'
-                  prefix = '-'
-                  borderColor = 'border-red-500/30'
+                  bgColor = 'bg-red-500/10';
+                  textColor = 'text-red-400';
+                  prefix = '-';
+                  borderColor = 'border-red-500/30';
                 } else {
-                  bgColor = 'bg-card/20'
-                  textColor = 'text-muted-foreground'
+                  bgColor = 'bg-card/20';
+                  textColor = 'text-muted-foreground';
                 }
 
                 return (
@@ -127,13 +120,11 @@ export function DiffModal({
                     key={`${index}-${lineIndex}`}
                     className={`${bgColor} ${textColor} px-4 py-1 border-l-2 ${borderColor} whitespace-pre-wrap break-all leading-relaxed hover:bg-opacity-80 transition-colors`}
                   >
-                    <span className="inline-block w-4 opacity-60 select-none">
-                      {prefix}
-                    </span>
+                    <span className="inline-block w-4 opacity-60 select-none">{prefix}</span>
                     {line || ' '}
                   </div>
-                )
-              })
+                );
+              });
             })}
           </div>
         </div>
@@ -166,5 +157,5 @@ export function DiffModal({
         </div>
       </div>
     </div>
-  )
+  );
 }

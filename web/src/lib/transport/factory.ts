@@ -28,7 +28,6 @@ export function detectTransportType(): TransportType {
   return 'http';
 }
 
-
 /**
  * 初始化全局 Transport 单例（异步）
  * 在应用启动时调用一次
@@ -84,13 +83,13 @@ export function getTransport(): Transport {
 
   if (state.status === 'uninitialized') {
     throw new Error(
-      '[Transport] Transport not initialized. Call initializeTransport() first, or use useTransport() hook.'
+      '[Transport] Transport not initialized. Call initializeTransport() first, or use useTransport() hook.',
     );
   }
 
   if (state.status === 'initializing') {
     throw new Error(
-      '[Transport] Transport is still initializing. Use useTransport() hook or await initializeTransport().'
+      '[Transport] Transport is still initializing. Use useTransport() hook or await initializeTransport().',
     );
   }
 

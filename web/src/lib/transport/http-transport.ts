@@ -59,7 +59,8 @@ export class HttpTransport implements Transport {
   constructor(config: TransportConfig = {}) {
     this.config = {
       baseURL: config.baseURL ?? '/api/admin',
-      wsURL: config.wsURL ?? `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/ws`,
+      wsURL:
+        config.wsURL ?? `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/ws`,
       reconnectInterval: config.reconnectInterval ?? 3000,
       maxReconnectAttempts: config.maxReconnectAttempts ?? 10,
     };
@@ -184,17 +185,20 @@ export class HttpTransport implements Transport {
     return data ?? [];
   }
 
-  async updateSessionProject(sessionID: string, projectID: number): Promise<{ session: Session; updatedRequests: number }> {
-    const { data } = await this.client.put<{ session: Session; updatedRequests: number }>(
-      `/sessions/${encodeURIComponent(sessionID)}/project`,
-      { projectID }
-    );
+  async updateSessionProject(
+    sessionID: string,
+    projectID: number,
+  ): Promise<{ session: Session; updatedRequests: number }> {
+    const { data } = await this.client.put<{
+      session: Session;
+      updatedRequests: number;
+    }>(`/sessions/${encodeURIComponent(sessionID)}/project`, { projectID });
     return data;
   }
 
   async rejectSession(sessionID: string): Promise<Session> {
     const { data } = await this.client.post<Session>(
-      `/sessions/${encodeURIComponent(sessionID)}/reject`
+      `/sessions/${encodeURIComponent(sessionID)}/reject`,
     );
     return data;
   }
@@ -242,7 +246,10 @@ export class HttpTransport implements Transport {
     return data;
   }
 
-  async updateRoutingStrategy(id: number, payload: Partial<RoutingStrategy>): Promise<RoutingStrategy> {
+  async updateRoutingStrategy(
+    id: number,
+    payload: Partial<RoutingStrategy>,
+  ): Promise<RoutingStrategy> {
     const { data } = await this.client.put<RoutingStrategy>(`/routing-strategies/${id}`, payload);
     return data;
   }
@@ -253,8 +260,12 @@ export class HttpTransport implements Transport {
 
   // ===== ProxyRequest API =====
 
-  async getProxyRequests(params?: CursorPaginationParams): Promise<CursorPaginationResult<ProxyRequest>> {
-    const { data } = await this.client.get<CursorPaginationResult<ProxyRequest>>('/requests', { params });
+  async getProxyRequests(
+    params?: CursorPaginationParams,
+  ): Promise<CursorPaginationResult<ProxyRequest>> {
+    const { data } = await this.client.get<CursorPaginationResult<ProxyRequest>>('/requests', {
+      params,
+    });
     return data ?? { items: [], hasMore: false };
   }
 
@@ -269,7 +280,9 @@ export class HttpTransport implements Transport {
   }
 
   async getProxyUpstreamAttempts(proxyRequestId: number): Promise<ProxyUpstreamAttempt[]> {
-    const { data } = await this.client.get<ProxyUpstreamAttempt[]>(`/requests/${proxyRequestId}/attempts`);
+    const { data } = await this.client.get<ProxyUpstreamAttempt[]>(
+      `/requests/${proxyRequestId}/attempts`,
+    );
     return data ?? [];
   }
 
@@ -282,11 +295,16 @@ export class HttpTransport implements Transport {
 
   // ===== Provider Stats API =====
 
-  async getProviderStats(clientType?: string, projectId?: number): Promise<Record<number, ProviderStats>> {
+  async getProviderStats(
+    clientType?: string,
+    projectId?: number,
+  ): Promise<Record<number, ProviderStats>> {
     const params: Record<string, string | number> = {};
     if (clientType) params.client_type = clientType;
     if (projectId !== undefined) params.project_id = projectId;
-    const { data } = await this.client.get<Record<number, ProviderStats>>('/provider-stats', { params: Object.keys(params).length > 0 ? params : undefined });
+    const { data } = await this.client.get<Record<number, ProviderStats>>('/provider-stats', {
+      params: Object.keys(params).length > 0 ? params : undefined,
+    });
     return data ?? {};
   }
 
@@ -303,7 +321,9 @@ export class HttpTransport implements Transport {
   }
 
   async updateSetting(key: string, value: string): Promise<{ key: string; value: string }> {
-    const { data } = await this.client.put<{ key: string; value: string }>(`/settings/${key}`, { value });
+    const { data } = await this.client.put<{ key: string; value: string }>(`/settings/${key}`, {
+      value,
+    });
     return data;
   }
 
@@ -325,7 +345,7 @@ export class HttpTransport implements Transport {
   async validateAntigravityToken(refreshToken: string): Promise<AntigravityTokenValidationResult> {
     const { data } = await axios.post<AntigravityTokenValidationResult>(
       '/api/antigravity/validate-token',
-      { refreshToken }
+      { refreshToken },
     );
     return data;
   }
@@ -333,7 +353,7 @@ export class HttpTransport implements Transport {
   async validateAntigravityTokens(tokens: string[]): Promise<AntigravityBatchValidationResult> {
     const { data } = await axios.post<AntigravityBatchValidationResult>(
       '/api/antigravity/validate-tokens',
-      { tokens }
+      { tokens },
     );
     return data;
   }
@@ -341,23 +361,26 @@ export class HttpTransport implements Transport {
   async validateAntigravityTokenText(tokenText: string): Promise<AntigravityBatchValidationResult> {
     const { data } = await axios.post<AntigravityBatchValidationResult>(
       '/api/antigravity/validate-tokens',
-      { tokenText }
+      { tokenText },
     );
     return data;
   }
 
-  async getAntigravityProviderQuota(providerId: number, forceRefresh?: boolean): Promise<AntigravityQuotaData> {
+  async getAntigravityProviderQuota(
+    providerId: number,
+    forceRefresh?: boolean,
+  ): Promise<AntigravityQuotaData> {
     const params = forceRefresh ? { refresh: 'true' } : undefined;
     const { data } = await axios.get<AntigravityQuotaData>(
       `/api/antigravity/providers/${providerId}/quota`,
-      { params }
+      { params },
     );
     return data;
   }
 
   async startAntigravityOAuth(): Promise<{ authURL: string; state: string }> {
     const { data } = await axios.post<{ authURL: string; state: string }>(
-      '/api/antigravity/oauth/start'
+      '/api/antigravity/oauth/start',
     );
     return data;
   }
@@ -396,15 +419,13 @@ export class HttpTransport implements Transport {
   async validateKiroSocialToken(refreshToken: string): Promise<KiroTokenValidationResult> {
     const { data } = await axios.post<KiroTokenValidationResult>(
       '/api/kiro/validate-social-token',
-      { refreshToken }
+      { refreshToken },
     );
     return data;
   }
 
   async getKiroProviderQuota(providerId: number): Promise<KiroQuotaData> {
-    const { data } = await axios.get<KiroQuotaData>(
-      `/api/kiro/providers/${providerId}/quota`
-    );
+    const { data } = await axios.get<KiroQuotaData>(`/api/kiro/providers/${providerId}/quota`);
     return data;
   }
 
@@ -427,10 +448,7 @@ export class HttpTransport implements Transport {
   }
 
   async verifyPassword(password: string): Promise<AuthVerifyResult> {
-    const { data } = await axios.post<AuthVerifyResult>(
-      '/api/admin/auth/verify',
-      { password }
-    );
+    const { data } = await axios.post<AuthVerifyResult>('/api/admin/auth/verify', { password });
     return data;
   }
 

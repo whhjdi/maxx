@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Button,
   Card,
@@ -9,44 +9,37 @@ import {
   CardTitle,
   Input,
   CardFooter,
-} from '@/components/ui'
-import { useProjects, useCreateProject } from '@/hooks/queries'
-import {
-  Plus,
-  X,
-  FolderKanban,
-  Loader2,
-  Calendar,
-  Hash,
-} from 'lucide-react'
-import { PageHeader } from '@/components/layout'
+} from '@/components/ui';
+import { useProjects, useCreateProject } from '@/hooks/queries';
+import { Plus, X, FolderKanban, Loader2, Calendar, Hash } from 'lucide-react';
+import { PageHeader } from '@/components/layout';
 
 export function ProjectsPage() {
-  const { t, i18n } = useTranslation()
-  const navigate = useNavigate()
-  const { data: projects, isLoading } = useProjects()
-  const createProject = useCreateProject()
-  const [showForm, setShowForm] = useState(false)
-  const [name, setName] = useState('')
+  const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const { data: projects, isLoading } = useProjects();
+  const createProject = useCreateProject();
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     createProject.mutate(
       { name, enabledCustomRoutes: [] },
       {
-        onSuccess: project => {
-          setShowForm(false)
-          setName('')
+        onSuccess: (project) => {
+          setShowForm(false);
+          setName('');
           // 创建后自动跳转到详情页
-          navigate(`/projects/${project.slug}`)
+          navigate(`/projects/${project.slug}`);
         },
-      }
-    )
-  }
+      },
+    );
+  };
 
   const handleRowClick = (slug: string) => {
-    navigate(`/projects/${slug}`)
-  }
+    navigate(`/projects/${slug}`);
+  };
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -56,15 +49,8 @@ export function ProjectsPage() {
         title={t('projects.title')}
         description={t('projects.description')}
       >
-        <Button
-          onClick={() => setShowForm(!showForm)}
-          variant={showForm ? 'secondary' : 'default'}
-        >
-          {showForm ? (
-            <X className="mr-2 h-4 w-4" />
-          ) : (
-            <Plus className="mr-2 h-4 w-4" />
-          )}
+        <Button onClick={() => setShowForm(!showForm)} variant={showForm ? 'secondary' : 'default'}>
+          {showForm ? <X className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
           {showForm ? t('common.cancel') : t('projects.addProject')}
         </Button>
       </PageHeader>
@@ -80,7 +66,7 @@ export function ProjectsPage() {
                   </label>
                   <Input
                     value={name}
-                    onChange={e => setName(e.target.value)}
+                    onChange={(e) => setName(e.target.value)}
                     placeholder={t('projects.projectNamePlaceholder')}
                     required
                     className="bg-muted border-border"
@@ -105,7 +91,7 @@ export function ProjectsPage() {
           </div>
         ) : projects && projects.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {projects.map(project => (
+            {projects.map((project) => (
               <Card
                 key={project.id}
                 className="group border-border bg-surface-primary cursor-pointer hover:border-accent/50 hover:shadow-card-hover transition-all duration-200 flex flex-col"
@@ -136,7 +122,7 @@ export function ProjectsPage() {
                           month: 'short',
                           day: 'numeric',
                           year: 'numeric',
-                        }
+                        },
                       )}
                     </span>
                   </div>
@@ -153,5 +139,5 @@ export function ProjectsPage() {
         )}
       </div>
     </div>
-  )
+  );
 }

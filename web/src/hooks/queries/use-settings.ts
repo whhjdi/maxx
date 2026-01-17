@@ -63,8 +63,7 @@ export function useCreateModelMapping() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: ModelMappingInput) =>
-      getTransport().createModelMapping(data),
+    mutationFn: (data: ModelMappingInput) => getTransport().createModelMapping(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: settingsKeys.modelMappings });
     },

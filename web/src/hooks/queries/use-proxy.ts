@@ -3,13 +3,13 @@
  * 获取代理服务器状态
  */
 
-import { useQuery } from '@tanstack/react-query'
-import { getTransport } from '@/lib/transport'
+import { useQuery } from '@tanstack/react-query';
+import { getTransport } from '@/lib/transport';
 
 export const proxyKeys = {
   all: ['proxy'] as const,
   status: () => [...proxyKeys.all, 'status'] as const,
-}
+};
 
 /**
  * 获取 Proxy 状态
@@ -20,5 +20,5 @@ export function useProxyStatus() {
     queryKey: proxyKeys.status(),
     queryFn: () => getTransport().getProxyStatus(),
     staleTime: Infinity, // Proxy 状态不会变化
-  })
+  });
 }

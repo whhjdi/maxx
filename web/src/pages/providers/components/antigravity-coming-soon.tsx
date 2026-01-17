@@ -1,8 +1,8 @@
-import { Wand2, ChevronLeft } from 'lucide-react'
-import { ANTIGRAVITY_COLOR } from '../types'
+import { Wand2, ChevronLeft } from 'lucide-react';
+import { ANTIGRAVITY_COLOR } from '../types';
 
 interface AntigravityComingSoonProps {
-  onBack: () => void
+  onBack: () => void;
 }
 
 export function AntigravityComingSoon({ onBack }: AntigravityComingSoonProps) {
@@ -16,12 +16,8 @@ export function AntigravityComingSoon({ onBack }: AntigravityComingSoonProps) {
           <ChevronLeft size={20} />
         </button>
         <div>
-          <h2 className="text-headline font-semibold text-foreground">
-            Antigravity
-          </h2>
-          <p className="text-caption text-muted-foreground">
-            OAuth Authentication
-          </p>
+          <h2 className="text-headline font-semibold text-foreground">Antigravity</h2>
+          <p className="text-caption text-muted-foreground">OAuth Authentication</p>
         </div>
       </div>
 
@@ -34,16 +30,13 @@ export function AntigravityComingSoon({ onBack }: AntigravityComingSoonProps) {
             >
               <Wand2 size={40} style={{ color: ANTIGRAVITY_COLOR }} />
             </div>
-            <h3 className="text-title3 font-semibold text-foreground mb-2">
-              Coming Soon
-            </h3>
+            <h3 className="text-title3 font-semibold text-foreground mb-2">Coming Soon</h3>
             <p className="text-body text-muted-foreground text-center max-w-sm">
-              Antigravity OAuth authentication will be available in a future
-              update.
+              Antigravity OAuth authentication will be available in a future update.
             </p>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

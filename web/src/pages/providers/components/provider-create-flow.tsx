@@ -1,34 +1,32 @@
-import { useState } from 'react'
-import { Globe, ChevronLeft, Key, Check } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
-import { useCreateProvider } from '@/hooks/queries'
-import type { ClientType, CreateProviderData } from '@/lib/transport'
+import { useState } from 'react';
+import { Globe, ChevronLeft, Key, Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useCreateProvider } from '@/hooks/queries';
+import type { ClientType, CreateProviderData } from '@/lib/transport';
 import {
   quickTemplates,
   defaultClients,
   type ClientConfig,
   type ProviderFormData,
   type CreateStep,
-} from '../types'
-import { ClientsConfigSection } from './clients-config-section'
-import { SelectTypeStep } from './select-type-step'
-import { AntigravityTokenImport } from './antigravity-token-import'
-import { KiroTokenImport } from './kiro-token-import'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+} from '../types';
+import { ClientsConfigSection } from './clients-config-section';
+import { SelectTypeStep } from './select-type-step';
+import { AntigravityTokenImport } from './antigravity-token-import';
+import { KiroTokenImport } from './kiro-token-import';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface ProviderCreateFlowProps {
-  onClose: () => void
+  onClose: () => void;
 }
 
 export function ProviderCreateFlow({ onClose }: ProviderCreateFlowProps) {
-  const { t } = useTranslation()
-  const [step, setStep] = useState<CreateStep>('select-type')
-  const [saving, setSaving] = useState(false)
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>(
-    'idle'
-  )
-  const createProvider = useCreateProvider()
+  const { t } = useTranslation();
+  const [step, setStep] = useState<CreateStep>('select-type');
+  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const createProvider = useCreateProvider();
 
   const [formData, setFormData] = useState<ProviderFormData>({
     type: 'custom',
@@ -37,75 +35,67 @@ export function ProviderCreateFlow({ onClose }: ProviderCreateFlowProps) {
     baseURL: '',
     apiKey: '',
     clients: [...defaultClients],
-  })
+  });
 
   const selectType = (type: 'custom' | 'antigravity' | 'kiro') => {
-    setFormData(prev => ({ ...prev, type }))
+    setFormData((prev) => ({ ...prev, type }));
     if (type === 'antigravity') {
-      setStep('antigravity-import')
+      setStep('antigravity-import');
     } else if (type === 'kiro') {
-      setStep('kiro-import')
+      setStep('kiro-import');
     }
-  }
+  };
 
   const applyTemplate = (templateId: string) => {
-    const template = quickTemplates.find(t => t.id === templateId)
+    const template = quickTemplates.find((t) => t.id === templateId);
     if (template) {
-      const updatedClients = defaultClients.map(client => {
-        const isSupported = template.supportedClients.includes(client.id)
-        const baseURL = template.clientBaseURLs[client.id] || ''
-        return { ...client, enabled: isSupported, urlOverride: baseURL }
-      })
+      const updatedClients = defaultClients.map((client) => {
+        const isSupported = template.supportedClients.includes(client.id);
+        const baseURL = template.clientBaseURLs[client.id] || '';
+        return { ...client, enabled: isSupported, urlOverride: baseURL };
+      });
 
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         selectedTemplate: templateId,
         name: template.name,
         clients: updatedClients,
-      }))
+      }));
 
-      setStep('custom-config')
+      setStep('custom-config');
     }
-  }
+  };
 
-  const updateClient = (
-    clientId: ClientType,
-    updates: Partial<ClientConfig>
-  ) => {
-    setFormData(prev => ({
+  const updateClient = (clientId: ClientType, updates: Partial<ClientConfig>) => {
+    setFormData((prev) => ({
       ...prev,
-      clients: prev.clients.map(c =>
-        c.id === clientId ? { ...c, ...updates } : c
-      ),
-    }))
-  }
+      clients: prev.clients.map((c) => (c.id === clientId ? { ...c, ...updates } : c)),
+    }));
+  };
 
   const isValid = () => {
-    if (!formData.name.trim()) return false
-    if (!formData.apiKey.trim()) return false
-    const hasEnabledClient = formData.clients.some(c => c.enabled)
+    if (!formData.name.trim()) return false;
+    if (!formData.apiKey.trim()) return false;
+    const hasEnabledClient = formData.clients.some((c) => c.enabled);
     const hasUrl =
-      formData.baseURL.trim() ||
-      formData.clients.some(c => c.enabled && c.urlOverride.trim())
-    return hasEnabledClient && hasUrl
-  }
+      formData.baseURL.trim() || formData.clients.some((c) => c.enabled && c.urlOverride.trim());
+    return hasEnabledClient && hasUrl;
+  };
 
   const handleSave = async () => {
-    if (!isValid()) return
+    if (!isValid()) return;
 
-    setSaving(true)
-    setSaveStatus('idle')
+    setSaving(true);
+    setSaveStatus('idle');
 
     try {
-      const supportedClientTypes = formData.clients
-        .filter(c => c.enabled)
-        .map(c => c.id)
-      const clientBaseURL: Partial<Record<ClientType, string>> = {}
-      formData.clients.forEach(c => {
+      const supportedClientTypes = formData.clients.filter((c) => c.enabled).map((c) => c.id);
+      const clientBaseURL: Partial<Record<ClientType, string>> = {};
+      formData.clients.forEach((c) => {
         if (c.enabled && c.urlOverride) {
-          clientBaseURL[c.id] = c.urlOverride
+          clientBaseURL[c.id] = c.urlOverride;
         }
-      })
+      });
 
       const data: CreateProviderData = {
         type: 'custom',
@@ -114,31 +104,30 @@ export function ProviderCreateFlow({ onClose }: ProviderCreateFlowProps) {
           custom: {
             baseURL: formData.baseURL,
             apiKey: formData.apiKey,
-            clientBaseURL:
-              Object.keys(clientBaseURL).length > 0 ? clientBaseURL : undefined,
+            clientBaseURL: Object.keys(clientBaseURL).length > 0 ? clientBaseURL : undefined,
           },
         },
         supportedClientTypes,
-      }
+      };
 
-      await createProvider.mutateAsync(data)
-      setSaveStatus('success')
-      setTimeout(() => onClose(), 500)
+      await createProvider.mutateAsync(data);
+      setSaveStatus('success');
+      setTimeout(() => onClose(), 500);
     } catch (error) {
-      console.error('Failed to create provider:', error)
-      setSaveStatus('error')
+      console.error('Failed to create provider:', error);
+      setSaveStatus('error');
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   const handleBack = () => {
     if (step === 'custom-config' || step === 'antigravity-import' || step === 'kiro-import') {
-      setStep('select-type')
+      setStep('select-type');
     } else {
-      onClose()
+      onClose();
     }
-  }
+  };
 
   if (step === 'select-type') {
     return (
@@ -149,35 +138,28 @@ export function ProviderCreateFlow({ onClose }: ProviderCreateFlowProps) {
         onSkipToConfig={() => setStep('custom-config')}
         onBack={handleBack}
       />
-    )
+    );
   }
 
   if (step === 'antigravity-import') {
-    const handleCreateAntigravityProvider = async (
-      data: CreateProviderData
-    ) => {
-      await createProvider.mutateAsync(data)
-      onClose()
-    }
+    const handleCreateAntigravityProvider = async (data: CreateProviderData) => {
+      await createProvider.mutateAsync(data);
+      onClose();
+    };
     return (
       <AntigravityTokenImport
         onBack={handleBack}
         onCreateProvider={handleCreateAntigravityProvider}
       />
-    )
+    );
   }
 
   if (step === 'kiro-import') {
     const handleCreateKiroProvider = async (data: CreateProviderData) => {
-      await createProvider.mutateAsync(data)
-      onClose()
-    }
-    return (
-      <KiroTokenImport
-        onBack={handleBack}
-        onCreateProvider={handleCreateKiroProvider}
-      />
-    )
+      await createProvider.mutateAsync(data);
+      onClose();
+    };
+    return <KiroTokenImport onBack={handleBack} onCreateProvider={handleCreateKiroProvider} />;
   }
 
   // Custom: Configuration
@@ -201,11 +183,7 @@ export function ProviderCreateFlow({ onClose }: ProviderCreateFlowProps) {
           <Button onClick={onClose} variant={'secondary'}>
             {t('common.cancel')}
           </Button>
-          <Button
-            onClick={handleSave}
-            disabled={saving || !isValid()}
-            variant={'default'}
-          >
+          <Button onClick={handleSave} disabled={saving || !isValid()} variant={'default'}>
             {saving ? (
               t('common.saving')
             ) : saveStatus === 'success' ? (
@@ -234,9 +212,7 @@ export function ProviderCreateFlow({ onClose }: ProviderCreateFlowProps) {
                 <Input
                   type="text"
                   value={formData.name}
-                  onChange={e =>
-                    setFormData(prev => ({ ...prev, name: e.target.value }))
-                  }
+                  onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                   placeholder={t('provider.namePlaceholder')}
                   className="w-full"
                 />
@@ -253,8 +229,8 @@ export function ProviderCreateFlow({ onClose }: ProviderCreateFlowProps) {
                   <Input
                     type="text"
                     value={formData.baseURL}
-                    onChange={e =>
-                      setFormData(prev => ({
+                    onChange={(e) =>
+                      setFormData((prev) => ({
                         ...prev,
                         baseURL: e.target.value,
                       }))
@@ -277,9 +253,7 @@ export function ProviderCreateFlow({ onClose }: ProviderCreateFlowProps) {
                   <Input
                     type="password"
                     value={formData.apiKey}
-                    onChange={e =>
-                      setFormData(prev => ({ ...prev, apiKey: e.target.value }))
-                    }
+                    onChange={(e) => setFormData((prev) => ({ ...prev, apiKey: e.target.value }))}
                     placeholder={t('provider.keyPlaceholder')}
                     className="w-full"
                   />
@@ -292,10 +266,7 @@ export function ProviderCreateFlow({ onClose }: ProviderCreateFlowProps) {
             <h3 className="text-lg font-semibold text-text-primary border-b border-border pb-2">
               {t('provider.clientConfig')}
             </h3>
-            <ClientsConfigSection
-              clients={formData.clients}
-              onUpdateClient={updateClient}
-            />
+            <ClientsConfigSection clients={formData.clients} onUpdateClient={updateClient} />
           </div>
 
           {saveStatus === 'error' && (
@@ -307,5 +278,5 @@ export function ProviderCreateFlow({ onClose }: ProviderCreateFlowProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

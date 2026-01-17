@@ -3,8 +3,8 @@
  * Used by both global routes and project routes
  */
 
-import { useState, useMemo } from 'react'
-import { Plus, RefreshCw, Zap } from 'lucide-react'
+import { useState, useMemo } from 'react';
+import { Plus, RefreshCw, Zap } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -15,13 +15,13 @@ import {
   type DragEndEvent,
   type DragStartEvent,
   DragOverlay,
-} from '@dnd-kit/core'
+} from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
-} from '@dnd-kit/sortable'
+} from '@dnd-kit/sortable';
 import {
   useRoutes,
   useProviders,
@@ -31,31 +31,28 @@ import {
   useUpdateRoutePositions,
   useProviderStats,
   routeKeys,
-} from '@/hooks/queries'
-import { useQueryClient } from '@tanstack/react-query'
-import { useStreamingRequests } from '@/hooks/use-streaming'
-import { getClientName, getClientColor } from '@/components/icons/client-icons'
-import { getProviderColor, type ProviderType } from '@/lib/theme'
-import type { ClientType, Provider } from '@/lib/transport'
+} from '@/hooks/queries';
+import { useQueryClient } from '@tanstack/react-query';
+import { useStreamingRequests } from '@/hooks/use-streaming';
+import { getClientName, getClientColor } from '@/components/icons/client-icons';
+import { getProviderColor, type ProviderType } from '@/lib/theme';
+import type { ClientType, Provider } from '@/lib/transport';
 import {
   SortableProviderRow,
   ProviderRowContent,
-} from '@/pages/client-routes/components/provider-row'
-import type { ProviderConfigItem } from '@/pages/client-routes/types'
-import { Button } from '../ui'
+} from '@/pages/client-routes/components/provider-row';
+import type { ProviderConfigItem } from '@/pages/client-routes/types';
+import { Button } from '../ui';
 
 interface ClientTypeRoutesContentProps {
-  clientType: ClientType
-  projectID: number // 0 for global routes
+  clientType: ClientType;
+  projectID: number; // 0 for global routes
 }
 
-export function ClientTypeRoutesContent({
-  clientType,
-  projectID,
-}: ClientTypeRoutesContentProps) {
-  const [activeId, setActiveId] = useState<string | null>(null)
-  const { data: providerStats = {} } = useProviderStats(clientType, projectID)
-  const queryClient = useQueryClient()
+export function ClientTypeRoutesContent({ clientType, projectID }: ClientTypeRoutesContentProps) {
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const { data: providerStats = {} } = useProviderStats(clientType, projectID);
+  const queryClient = useQueryClient();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -65,75 +62,65 @@ export function ClientTypeRoutesContent({
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
-  )
+    }),
+  );
 
-  const { data: allRoutes, isLoading: routesLoading } = useRoutes()
-  const { data: providers = [], isLoading: providersLoading } = useProviders()
-  const { countsByProviderAndClient } = useStreamingRequests()
+  const { data: allRoutes, isLoading: routesLoading } = useRoutes();
+  const { data: providers = [], isLoading: providersLoading } = useProviders();
+  const { countsByProviderAndClient } = useStreamingRequests();
 
-  const createRoute = useCreateRoute()
-  const toggleRoute = useToggleRoute()
-  const deleteRoute = useDeleteRoute()
-  const updatePositions = useUpdateRoutePositions()
+  const createRoute = useCreateRoute();
+  const toggleRoute = useToggleRoute();
+  const deleteRoute = useDeleteRoute();
+  const updatePositions = useUpdateRoutePositions();
 
-  const loading = routesLoading || providersLoading
+  const loading = routesLoading || providersLoading;
 
   // Get routes for this clientType and projectID
   const clientRoutes = useMemo(() => {
-    return (
-      allRoutes?.filter(
-        r => r.clientType === clientType && r.projectID === projectID
-      ) || []
-    )
-  }, [allRoutes, clientType, projectID])
+    return allRoutes?.filter((r) => r.clientType === clientType && r.projectID === projectID) || [];
+  }, [allRoutes, clientType, projectID]);
 
   // Build provider config items
   const items = useMemo((): ProviderConfigItem[] => {
-    const allItems = providers.map(provider => {
-      const route =
-        clientRoutes.find(r => Number(r.providerID) === Number(provider.id)) ||
-        null
-      const isNative = (provider.supportedClientTypes || []).includes(
-        clientType
-      )
+    const allItems = providers.map((provider) => {
+      const route = clientRoutes.find((r) => Number(r.providerID) === Number(provider.id)) || null;
+      const isNative = (provider.supportedClientTypes || []).includes(clientType);
       return {
         id: `${clientType}-provider-${provider.id}`,
         provider,
         route,
         enabled: route?.isEnabled ?? false,
         isNative,
-      }
-    })
+      };
+    });
 
     // Only show providers that have routes
-    const filteredItems = allItems.filter(item => item.route)
+    const filteredItems = allItems.filter((item) => item.route);
 
     return filteredItems.sort((a, b) => {
-      if (a.route && b.route) return a.route.position - b.route.position
-      if (a.route && !b.route) return -1
-      if (!a.route && b.route) return 1
-      if (a.isNative && !b.isNative) return -1
-      if (!a.isNative && b.isNative) return 1
-      return a.provider.name.localeCompare(b.provider.name)
-    })
-  }, [providers, clientRoutes, clientType])
+      if (a.route && b.route) return a.route.position - b.route.position;
+      if (a.route && !b.route) return -1;
+      if (!a.route && b.route) return 1;
+      if (a.isNative && !b.isNative) return -1;
+      if (!a.isNative && b.isNative) return 1;
+      return a.provider.name.localeCompare(b.provider.name);
+    });
+  }, [providers, clientRoutes, clientType]);
 
   // Get available providers (without routes yet)
   const availableProviders = useMemo((): Provider[] => {
-    return providers.filter(p => {
-      const hasRoute = clientRoutes.some(
-        r => Number(r.providerID) === Number(p.id)
-      )
-      return !hasRoute
-    })
-  }, [providers, clientRoutes])
+    return providers.filter((p) => {
+      const hasRoute = clientRoutes.some((r) => Number(r.providerID) === Number(p.id));
+      return !hasRoute;
+    });
+  }, [providers, clientRoutes]);
 
-  const activeItem = activeId ? items.find(item => item.id === activeId) : null
+  const activeItem = activeId ? items.find((item) => item.id === activeId) : null;
 
   const handleToggle = (item: ProviderConfigItem) => {
     if (item.route) {
-      toggleRoute.mutate(item.route.id)
+      toggleRoute.mutate(item.route.id);
     } else {
       createRoute.mutate({
         isEnabled: true,
@@ -143,9 +130,9 @@ export function ClientTypeRoutesContent({
         providerID: item.provider.id,
         position: items.length + 1,
         retryConfigID: 0,
-      })
+      });
     }
-  }
+  };
 
   const handleAddRoute = (provider: Provider, isNative: boolean) => {
     createRoute.mutate({
@@ -156,69 +143,69 @@ export function ClientTypeRoutesContent({
       providerID: provider.id,
       position: items.length + 1,
       retryConfigID: 0,
-    })
-  }
+    });
+  };
 
   const handleDeleteRoute = (routeId: number) => {
-    deleteRoute.mutate(routeId)
-  }
+    deleteRoute.mutate(routeId);
+  };
 
   const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as string)
-  }
+    setActiveId(event.active.id as string);
+  };
 
   const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event
-    setActiveId(null)
+    const { active, over } = event;
+    setActiveId(null);
 
-    if (!over || active.id === over.id) return
+    if (!over || active.id === over.id) return;
 
-    const oldIndex = items.findIndex(item => item.id === active.id)
-    const newIndex = items.findIndex(item => item.id === over.id)
+    const oldIndex = items.findIndex((item) => item.id === active.id);
+    const newIndex = items.findIndex((item) => item.id === over.id);
 
-    if (oldIndex === -1 || newIndex === -1) return
+    if (oldIndex === -1 || newIndex === -1) return;
 
-    const newItems = arrayMove(items, oldIndex, newIndex)
+    const newItems = arrayMove(items, oldIndex, newIndex);
 
     // Update positions for all items
-    const updates: Record<number, number> = {}
+    const updates: Record<number, number> = {};
     newItems.forEach((item, i) => {
       if (item.route) {
-        updates[item.route.id] = i + 1
+        updates[item.route.id] = i + 1;
       }
-    })
+    });
 
     if (Object.keys(updates).length > 0) {
       // 乐观更新：立即更新本地缓存
       queryClient.setQueryData(routeKeys.list(), (oldRoutes: typeof allRoutes) => {
-        if (!oldRoutes) return oldRoutes
-        return oldRoutes.map(route => {
-          const newPosition = updates[route.id]
+        if (!oldRoutes) return oldRoutes;
+        return oldRoutes.map((route) => {
+          const newPosition = updates[route.id];
           if (newPosition !== undefined) {
-            return { ...route, position: newPosition }
+            return { ...route, position: newPosition };
           }
-          return route
-        })
-      })
+          return route;
+        });
+      });
 
       // 发送 API 请求
       updatePositions.mutate(updates, {
         onError: () => {
           // 失败时回滚：重新获取服务器数据
-          queryClient.invalidateQueries({ queryKey: routeKeys.list() })
+          queryClient.invalidateQueries({ queryKey: routeKeys.list() });
         },
-      })
+      });
     }
-  }
+  };
 
-  const color = getClientColor(clientType)
+  const color = getClientColor(clientType);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full p-12">
         <div className="text-muted-foreground">Loading...</div>
       </div>
-    )
+    );
   }
 
   return (
@@ -234,7 +221,7 @@ export function ClientTypeRoutesContent({
               onDragEnd={handleDragEnd}
             >
               <SortableContext
-                items={items.map(item => item.id)}
+                items={items.map((item) => item.id)}
                 strategy={verticalListSortingStrategy}
               >
                 <div className="space-y-2">
@@ -245,20 +232,12 @@ export function ClientTypeRoutesContent({
                       index={index}
                       clientType={clientType}
                       streamingCount={
-                        countsByProviderAndClient.get(
-                          `${item.provider.id}:${clientType}`
-                        ) || 0
+                        countsByProviderAndClient.get(`${item.provider.id}:${clientType}`) || 0
                       }
                       stats={providerStats[item.provider.id]}
-                      isToggling={
-                        toggleRoute.isPending || createRoute.isPending
-                      }
+                      isToggling={toggleRoute.isPending || createRoute.isPending}
                       onToggle={() => handleToggle(item)}
-                      onDelete={
-                        item.route
-                          ? () => handleDeleteRoute(item.route!.id)
-                          : undefined
-                      }
+                      onDelete={item.route ? () => handleDeleteRoute(item.route!.id) : undefined}
                     />
                   ))}
                 </div>
@@ -268,12 +247,10 @@ export function ClientTypeRoutesContent({
                 {activeItem && (
                   <ProviderRowContent
                     item={activeItem}
-                    index={items.findIndex(i => i.id === activeItem.id)}
+                    index={items.findIndex((i) => i.id === activeItem.id)}
                     clientType={clientType}
                     streamingCount={
-                      countsByProviderAndClient.get(
-                        `${activeItem.provider.id}:${clientType}`
-                      ) || 0
+                      countsByProviderAndClient.get(`${activeItem.provider.id}:${clientType}`) || 0
                     }
                     stats={providerStats[activeItem.provider.id]}
                     isToggling={false}
@@ -285,12 +262,8 @@ export function ClientTypeRoutesContent({
             </DndContext>
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-              <p className="text-body">
-                No routes configured for {getClientName(clientType)}
-              </p>
-              <p className="text-caption mt-sm">
-                Add a route below to get started
-              </p>
+              <p className="text-body">No routes configured for {getClientName(clientType)}</p>
+              <p className="text-caption mt-sm">Add a route below to get started</p>
             </div>
           )}
 
@@ -304,13 +277,9 @@ export function ClientTypeRoutesContent({
                 </span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {availableProviders.map(provider => {
-                  const isNative = (
-                    provider.supportedClientTypes || []
-                  ).includes(clientType)
-                  const providerColor = getProviderColor(
-                    provider.type as ProviderType
-                  )
+                {availableProviders.map((provider) => {
+                  const isNative = (provider.supportedClientTypes || []).includes(clientType);
+                  const providerColor = getProviderColor(provider.type as ProviderType);
                   return (
                     <Button
                       key={provider.id}
@@ -342,10 +311,7 @@ export function ClientTypeRoutesContent({
                             </span>
                             {isNative ? (
                               <span className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                                <Zap
-                                  size={10}
-                                  className="fill-current opacity-30"
-                                />
+                                <Zap size={10} className="fill-current opacity-30" />
                                 NATIVE
                               </span>
                             ) : (
@@ -365,7 +331,7 @@ export function ClientTypeRoutesContent({
                         className="opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300 shrink-0"
                       />
                     </Button>
-                  )
+                  );
                 })}
               </div>
             </div>
@@ -373,5 +339,5 @@ export function ClientTypeRoutesContent({
         </div>
       </div>
     </div>
-  )
+  );
 }

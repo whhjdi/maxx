@@ -8,54 +8,52 @@ import {
   TabsList,
   TabsTrigger,
   TabsContent,
-} from '@/components/ui'
-import { Server, Code, Database, Info, Zap } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
-import type { ProxyUpstreamAttempt, ProxyRequest } from '@/lib/transport'
-import { cn } from '@/lib/utils'
-import { CopyButton, CopyAsCurlButton, DiffButton, EmptyState } from './components'
-import { RequestDetailView } from './RequestDetailView'
+} from '@/components/ui';
+import { Server, Code, Database, Info, Zap } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import type { ProxyUpstreamAttempt, ProxyRequest } from '@/lib/transport';
+import { cn } from '@/lib/utils';
+import { CopyButton, CopyAsCurlButton, DiffButton, EmptyState } from './components';
+import { RequestDetailView } from './RequestDetailView';
 
 // Selection type: either the main request or an attempt
-type SelectionType =
-  | { type: 'request' }
-  | { type: 'attempt'; attemptId: number }
+type SelectionType = { type: 'request' } | { type: 'attempt'; attemptId: number };
 
 // 微美元转美元 (1 USD = 1,000,000 microUSD)
-const MICRO_USD_PER_USD = 1_000_000
+const MICRO_USD_PER_USD = 1_000_000;
 function microToUSD(microUSD: number): number {
-  return microUSD / MICRO_USD_PER_USD
+  return microUSD / MICRO_USD_PER_USD;
 }
 
 function formatCost(microUSD: number): string {
-  if (microUSD === 0) return '-'
-  const usd = microToUSD(microUSD)
-  if (usd < 0.0001) return '<$0.0001'
-  if (usd < 0.001) return `$${usd.toFixed(5)}`
-  if (usd < 0.01) return `$${usd.toFixed(4)}`
-  if (usd < 1) return `$${usd.toFixed(3)}`
-  return `$${usd.toFixed(2)}`
+  if (microUSD === 0) return '-';
+  const usd = microToUSD(microUSD);
+  if (usd < 0.0001) return '<$0.0001';
+  if (usd < 0.001) return `$${usd.toFixed(5)}`;
+  if (usd < 0.01) return `$${usd.toFixed(4)}`;
+  if (usd < 1) return `$${usd.toFixed(3)}`;
+  return `$${usd.toFixed(2)}`;
 }
 
 function formatJSON(obj: unknown): string {
-  if (!obj) return '-'
+  if (!obj) return '-';
   try {
-    return JSON.stringify(obj, null, 2)
+    return JSON.stringify(obj, null, 2);
   } catch {
-    return String(obj)
+    return String(obj);
   }
 }
 
 interface RequestDetailPanelProps {
-  request: ProxyRequest
-  selection: SelectionType
-  attempts: ProxyUpstreamAttempt[] | undefined
-  activeTab: 'request' | 'response' | 'metadata'
-  setActiveTab: (tab: 'request' | 'response' | 'metadata') => void
-  providerMap: Map<number, string>
-  projectMap: Map<number, string>
-  sessionMap: Map<string, { clientType: string; projectID: number }>
-  tokenMap: Map<number, string>
+  request: ProxyRequest;
+  selection: SelectionType;
+  attempts: ProxyUpstreamAttempt[] | undefined;
+  activeTab: 'request' | 'response' | 'metadata';
+  setActiveTab: (tab: 'request' | 'response' | 'metadata') => void;
+  providerMap: Map<number, string>;
+  projectMap: Map<number, string>;
+  sessionMap: Map<string, { clientType: string; projectID: number }>;
+  tokenMap: Map<number, string>;
 }
 
 export function RequestDetailPanel({
@@ -69,11 +67,9 @@ export function RequestDetailPanel({
   sessionMap,
   tokenMap,
 }: RequestDetailPanelProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation();
   const selectedAttempt =
-    selection.type === 'attempt'
-      ? attempts?.find(a => a.id === selection.attemptId)
-      : null
+    selection.type === 'attempt' ? attempts?.find((a) => a.id === selection.attemptId) : null;
 
   if (selection.type === 'request') {
     return (
@@ -88,7 +84,7 @@ export function RequestDetailPanel({
         projectMap={projectMap}
         tokenName={tokenMap.get(request.apiTokenID)}
       />
-    )
+    );
   }
 
   if (!selectedAttempt) {
@@ -97,7 +93,7 @@ export function RequestDetailPanel({
         message={t('requests.selectAttempt')}
         icon={<Server className="h-12 w-12 mb-4 opacity-10" />}
       />
-    )
+    );
   }
 
   return (
@@ -119,13 +115,14 @@ export function RequestDetailPanel({
             </h3>
             <div className="flex items-center gap-3 text-xs text-text-secondary mt-0.5">
               <span>{t('requests.attemptId', { id: selectedAttempt.id })}</span>
-              {selectedAttempt.mappedModel && selectedAttempt.requestModel !== selectedAttempt.mappedModel && (
-                <span className="text-muted-foreground">
-                  <span className="text-muted-foreground">{selectedAttempt.requestModel}</span>
-                  <span className="mx-1">→</span>
-                  <span className="text-foreground">{selectedAttempt.mappedModel}</span>
-                </span>
-              )}
+              {selectedAttempt.mappedModel &&
+                selectedAttempt.requestModel !== selectedAttempt.mappedModel && (
+                  <span className="text-muted-foreground">
+                    <span className="text-muted-foreground">{selectedAttempt.requestModel}</span>
+                    <span className="mx-1">→</span>
+                    <span className="text-foreground">{selectedAttempt.mappedModel}</span>
+                  </span>
+                )}
               {selectedAttempt.cost > 0 && (
                 <span className="text-blue-400 font-medium">
                   Cost: {formatCost(selectedAttempt.cost)}
@@ -152,359 +149,321 @@ export function RequestDetailPanel({
       {/* Detail Content */}
       <TabsContent value="request" className="flex-1 overflow-hidden flex flex-col min-w-0 mt-0">
         {selectedAttempt.requestInfo ? (
-            <div className="flex-1 flex flex-col overflow-hidden p-6 gap-6 animate-fade-in min-w-0">
-              <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border border-border shrink-0">
-                <Badge variant="info" className="font-mono text-xs">
-                  {selectedAttempt.requestInfo.method}
-                </Badge>
-                <code className="flex-1 font-mono text-xs text-foreground break-all">
-                  {selectedAttempt.requestInfo.url}
-                </code>
-                <CopyAsCurlButton requestInfo={selectedAttempt.requestInfo} />
+          <div className="flex-1 flex flex-col overflow-hidden p-6 gap-6 animate-fade-in min-w-0">
+            <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border border-border shrink-0">
+              <Badge variant="info" className="font-mono text-xs">
+                {selectedAttempt.requestInfo.method}
+              </Badge>
+              <code className="flex-1 font-mono text-xs text-foreground break-all">
+                {selectedAttempt.requestInfo.url}
+              </code>
+              <CopyAsCurlButton requestInfo={selectedAttempt.requestInfo} />
+            </div>
+
+            <div className="flex flex-col min-h-0 flex-1 gap-6">
+              <div className="flex flex-col min-h-0 gap-3 flex-1">
+                <div className="flex items-center justify-between shrink-0">
+                  <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                    <Code size={14} /> Headers
+                  </h5>
+                  <div className="flex items-center gap-2">
+                    <DiffButton
+                      clientContent={formatJSON(request.requestInfo?.headers || {})}
+                      upstreamContent={formatJSON(selectedAttempt.requestInfo.headers)}
+                      title={t('requests.compareHeaders')}
+                    />
+                    <CopyButton content={formatJSON(selectedAttempt.requestInfo.headers)} />
+                  </div>
+                </div>
+                <div className="flex-1 rounded-lg border border-border bg-muted/50 dark:bg-muted/30 p-4 overflow-auto shadow-inner relative group min-h-0">
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Badge variant="outline" className="text-[10px] bg-card/80 backdrop-blur-sm">
+                      JSON
+                    </Badge>
+                  </div>
+                  <pre className="text-xs font-mono text-foreground/90 leading-relaxed whitespace-pre overflow-x-auto">
+                    {formatJSON(selectedAttempt.requestInfo.headers)}
+                  </pre>
+                </div>
               </div>
 
-              <div className="flex flex-col min-h-0 flex-1 gap-6">
+              {selectedAttempt.requestInfo.body && (
                 <div className="flex flex-col min-h-0 gap-3 flex-1">
                   <div className="flex items-center justify-between shrink-0">
                     <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                      <Code size={14} /> Headers
+                      <Database size={14} /> Body
                     </h5>
                     <div className="flex items-center gap-2">
                       <DiffButton
-                        clientContent={formatJSON(
-                          request.requestInfo?.headers || {}
-                        )}
-                        upstreamContent={formatJSON(
-                          selectedAttempt.requestInfo.headers
-                        )}
-                        title={t('requests.compareHeaders')}
+                        clientContent={(() => {
+                          try {
+                            return formatJSON(JSON.parse(request.requestInfo?.body || '{}'));
+                          } catch {
+                            return request.requestInfo?.body || '';
+                          }
+                        })()}
+                        upstreamContent={(() => {
+                          try {
+                            return formatJSON(JSON.parse(selectedAttempt.requestInfo.body));
+                          } catch {
+                            return selectedAttempt.requestInfo.body;
+                          }
+                        })()}
+                        title={t('requests.compareBody')}
                       />
                       <CopyButton
-                        content={formatJSON(
-                        selectedAttempt.requestInfo.headers
-                        )}
+                        content={(() => {
+                          try {
+                            return formatJSON(JSON.parse(selectedAttempt.requestInfo.body));
+                          } catch {
+                            return selectedAttempt.requestInfo.body;
+                          }
+                        })()}
                       />
                     </div>
                   </div>
                   <div className="flex-1 rounded-lg border border-border bg-muted/50 dark:bg-muted/30 p-4 overflow-auto shadow-inner relative group min-h-0">
                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Badge
-                        variant="outline"
-                        className="text-[10px] bg-card/80 backdrop-blur-sm"
-                      >
+                      <Badge variant="outline" className="text-[10px] bg-card/80 backdrop-blur-sm">
                         JSON
                       </Badge>
                     </div>
-                    <pre className="text-xs font-mono text-foreground/90 leading-relaxed whitespace-pre overflow-x-auto">
-                      {formatJSON(selectedAttempt.requestInfo.headers)}
+                    <pre className="text-xs font-mono text-foreground/95 whitespace-pre overflow-x-auto leading-relaxed">
+                      {(() => {
+                        try {
+                          return formatJSON(JSON.parse(selectedAttempt.requestInfo.body));
+                        } catch {
+                          return selectedAttempt.requestInfo.body;
+                        }
+                      })()}
                     </pre>
                   </div>
                 </div>
-
-                {selectedAttempt.requestInfo.body && (
-                  <div className="flex flex-col min-h-0 gap-3 flex-1">
-                    <div className="flex items-center justify-between shrink-0">
-                      <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                        <Database size={14} /> Body
-                      </h5>
-                      <div className="flex items-center gap-2">
-                        <DiffButton
-                          clientContent={(() => {
-                            try {
-                              return formatJSON(
-                                JSON.parse(request.requestInfo?.body || '{}')
-                              )
-                            } catch {
-                              return request.requestInfo?.body || ''
-                            }
-                          })()}
-                          upstreamContent={(() => {
-                            try {
-                              return formatJSON(
-                                JSON.parse(selectedAttempt.requestInfo.body)
-                              )
-                            } catch {
-                              return selectedAttempt.requestInfo.body
-                            }
-                          })()}
-                          title={t('requests.compareBody')}
-                        />
-                        <CopyButton
-                          content={(() => {
-                            try {
-                              return formatJSON(
-                                JSON.parse(selectedAttempt.requestInfo.body)
-                              )
-                            } catch {
-                              return selectedAttempt.requestInfo.body
-                            }
-                          })()}
-                        />
-                      </div>
-                    </div>
-                    <div className="flex-1 rounded-lg border border-border bg-muted/50 dark:bg-muted/30 p-4 overflow-auto shadow-inner relative group min-h-0">
-                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] bg-card/80 backdrop-blur-sm"
-                        >
-                          JSON
-                        </Badge>
-                      </div>
-                      <pre className="text-xs font-mono text-foreground/95 whitespace-pre overflow-x-auto leading-relaxed">
-                        {(() => {
-                          try {
-                            return formatJSON(
-                              JSON.parse(selectedAttempt.requestInfo.body)
-                            )
-                          } catch {
-                            return selectedAttempt.requestInfo.body
-                          }
-                        })()}
-                      </pre>
-                    </div>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
-          ) : (
-            <EmptyState message={t('requests.noRequestData')} />
-          )}
+          </div>
+        ) : (
+          <EmptyState message={t('requests.noRequestData')} />
+        )}
       </TabsContent>
 
       <TabsContent value="response" className="flex-1 overflow-hidden flex flex-col min-w-0 mt-0">
         {selectedAttempt.responseInfo ? (
-            <div className="flex-1 flex flex-col overflow-hidden p-6 gap-6 animate-fade-in min-w-0">
-              <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border border-border shrink-0">
-                <div
-                  className={cn(
-                    'px-2 py-1 rounded text-xs font-bold font-mono',
-                    selectedAttempt.responseInfo.status >= 400
-                      ? 'bg-red-400/10 text-red-400'
-                      : 'bg-blue-400/10 text-blue-400'
-                  )}
-                >
-                  {selectedAttempt.responseInfo.status}
+          <div className="flex-1 flex flex-col overflow-hidden p-6 gap-6 animate-fade-in min-w-0">
+            <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border border-border shrink-0">
+              <div
+                className={cn(
+                  'px-2 py-1 rounded text-xs font-bold font-mono',
+                  selectedAttempt.responseInfo.status >= 400
+                    ? 'bg-red-400/10 text-red-400'
+                    : 'bg-blue-400/10 text-blue-400',
+                )}
+              >
+                {selectedAttempt.responseInfo.status}
+              </div>
+              <span className="text-sm text-muted-foreground font-medium">Response Status</span>
+            </div>
+
+            <div className="flex flex-col min-h-0 flex-1 gap-6">
+              <div className="flex flex-col min-h-0 gap-3 flex-1">
+                <div className="flex items-center justify-between shrink-0">
+                  <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                    <Code size={14} /> Headers
+                  </h5>
+                  <CopyButton content={formatJSON(selectedAttempt.responseInfo.headers)} />
                 </div>
-                <span className="text-sm text-muted-foreground font-medium">
-                  Response Status
-                </span>
+                <div className="flex-1 rounded-lg border border-border bg-muted/50 dark:bg-muted/30 p-4 overflow-auto shadow-inner relative group min-h-0">
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Badge variant="outline" className="text-[10px] bg-card/80 backdrop-blur-sm">
+                      JSON
+                    </Badge>
+                  </div>
+                  <pre className="text-xs font-mono text-foreground/90 leading-relaxed whitespace-pre overflow-x-auto">
+                    {formatJSON(selectedAttempt.responseInfo.headers)}
+                  </pre>
+                </div>
               </div>
 
-              <div className="flex flex-col min-h-0 flex-1 gap-6">
+              {selectedAttempt.responseInfo.body && (
                 <div className="flex flex-col min-h-0 gap-3 flex-1">
                   <div className="flex items-center justify-between shrink-0">
                     <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                      <Code size={14} /> Headers
+                      <Database size={14} /> Body
                     </h5>
                     <CopyButton
-                      content={formatJSON(selectedAttempt.responseInfo.headers)}
-                     />
+                      content={(() => {
+                        try {
+                          return formatJSON(JSON.parse(selectedAttempt.responseInfo.body));
+                        } catch {
+                          return selectedAttempt.responseInfo.body;
+                        }
+                      })()}
+                    />
                   </div>
                   <div className="flex-1 rounded-lg border border-border bg-muted/50 dark:bg-muted/30 p-4 overflow-auto shadow-inner relative group min-h-0">
                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Badge
-                        variant="outline"
-                        className="text-[10px] bg-card/80 backdrop-blur-sm"
-                      >
+                      <Badge variant="outline" className="text-[10px] bg-card/80 backdrop-blur-sm">
                         JSON
                       </Badge>
                     </div>
-                    <pre className="text-xs font-mono text-foreground/90 leading-relaxed whitespace-pre overflow-x-auto">
-                      {formatJSON(selectedAttempt.responseInfo.headers)}
+                    <pre className="text-xs font-mono text-foreground/95 whitespace-pre overflow-x-auto leading-relaxed">
+                      {(() => {
+                        try {
+                          return formatJSON(JSON.parse(selectedAttempt.responseInfo.body));
+                        } catch {
+                          return selectedAttempt.responseInfo.body;
+                        }
+                      })()}
                     </pre>
                   </div>
                 </div>
-
-                {selectedAttempt.responseInfo.body && (
-                  <div className="flex flex-col min-h-0 gap-3 flex-1">
-                    <div className="flex items-center justify-between shrink-0">
-                      <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                        <Database size={14} /> Body
-                      </h5>
-                      <CopyButton
-                        content={(() => {
-                          try {
-                            return formatJSON(
-                              JSON.parse(selectedAttempt.responseInfo.body)
-                            )
-                          } catch {
-                            return selectedAttempt.responseInfo.body
-                          }
-                        })()}
-                      />
-                    </div>
-                    <div className="flex-1 rounded-lg border border-border bg-muted/50 dark:bg-muted/30 p-4 overflow-auto shadow-inner relative group min-h-0">
-                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] bg-card/80 backdrop-blur-sm"
-                        >
-                          JSON
-                        </Badge>
-                      </div>
-                      <pre className="text-xs font-mono text-foreground/95 whitespace-pre overflow-x-auto leading-relaxed">
-                        {(() => {
-                          try {
-                            return formatJSON(
-                              JSON.parse(selectedAttempt.responseInfo.body)
-                            )
-                          } catch {
-                            return selectedAttempt.responseInfo.body
-                          }
-                        })()}
-                      </pre>
-                    </div>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
-          ) : (
-            <EmptyState message={t('requests.noResponseData')} />
-          )}
+          </div>
+        ) : (
+          <EmptyState message={t('requests.noResponseData')} />
+        )}
       </TabsContent>
 
       <TabsContent value="metadata" className="flex-1 overflow-y-auto p-6 mt-0">
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <Card className="bg-card border-border">
-                <CardHeader className="pb-2 border-b border-border/50">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Info size={16} className="text-info" />
-                    Attempt Info
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <dl className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
-                      <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Attempt ID
-                      </dt>
-                      <dd className="sm:col-span-2 font-mono text-xs text-foreground bg-muted px-2 py-1 rounded select-all break-all">
-                        #{selectedAttempt.id}
-                      </dd>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
-                      <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Provider
-                      </dt>
-                      <dd className="sm:col-span-2 font-mono text-xs text-foreground bg-muted px-2 py-1 rounded">
-                        {providerMap.get(selectedAttempt.providerID) || `Provider #${selectedAttempt.providerID}`}
-                      </dd>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
-                      <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Request Model
-                      </dt>
-                      <dd className="sm:col-span-2 font-mono text-xs text-foreground bg-muted px-2 py-1 rounded">
-                        {selectedAttempt.requestModel || '-'}
-                      </dd>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
-                      <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Mapped Model
-                      </dt>
-                      <dd className="sm:col-span-2 font-mono text-xs text-foreground bg-muted px-2 py-1 rounded">
-                        {selectedAttempt.mappedModel || '-'}
-                        {selectedAttempt.mappedModel && selectedAttempt.requestModel !== selectedAttempt.mappedModel && (
-                          <span className="ml-2 text-muted-foreground text-[10px]">
-                            (converted)
-                          </span>
-                        )}
-                      </dd>
-                    </div>
-                    {selectedAttempt.responseModel && (
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
-                        <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                          Response Model
-                        </dt>
-                        <dd className="sm:col-span-2 font-mono text-xs text-foreground bg-muted px-2 py-1 rounded">
-                          {selectedAttempt.responseModel}
-                          {selectedAttempt.responseModel !== selectedAttempt.mappedModel && (
-                            <span className="ml-2 text-muted-foreground text-[10px]">
-                              (upstream)
-                            </span>
-                          )}
-                        </dd>
-                      </div>
-                    )}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
-                      <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Status
-                      </dt>
-                      <dd className="sm:col-span-2 font-mono text-xs text-foreground bg-muted px-2 py-1 rounded">
-                        {selectedAttempt.status}
-                      </dd>
-                    </div>
-                  </dl>
-                </CardContent>
-              </Card>
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-2 border-b border-border/50">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Info size={16} className="text-info" />
+                Attempt Info
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <dl className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                  <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Attempt ID
+                  </dt>
+                  <dd className="sm:col-span-2 font-mono text-xs text-foreground bg-muted px-2 py-1 rounded select-all break-all">
+                    #{selectedAttempt.id}
+                  </dd>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                  <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Provider
+                  </dt>
+                  <dd className="sm:col-span-2 font-mono text-xs text-foreground bg-muted px-2 py-1 rounded">
+                    {providerMap.get(selectedAttempt.providerID) ||
+                      `Provider #${selectedAttempt.providerID}`}
+                  </dd>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                  <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Request Model
+                  </dt>
+                  <dd className="sm:col-span-2 font-mono text-xs text-foreground bg-muted px-2 py-1 rounded">
+                    {selectedAttempt.requestModel || '-'}
+                  </dd>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                  <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Mapped Model
+                  </dt>
+                  <dd className="sm:col-span-2 font-mono text-xs text-foreground bg-muted px-2 py-1 rounded">
+                    {selectedAttempt.mappedModel || '-'}
+                    {selectedAttempt.mappedModel &&
+                      selectedAttempt.requestModel !== selectedAttempt.mappedModel && (
+                        <span className="ml-2 text-muted-foreground text-[10px]">(converted)</span>
+                      )}
+                  </dd>
+                </div>
+                {selectedAttempt.responseModel && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                    <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Response Model
+                    </dt>
+                    <dd className="sm:col-span-2 font-mono text-xs text-foreground bg-muted px-2 py-1 rounded">
+                      {selectedAttempt.responseModel}
+                      {selectedAttempt.responseModel !== selectedAttempt.mappedModel && (
+                        <span className="ml-2 text-muted-foreground text-[10px]">(upstream)</span>
+                      )}
+                    </dd>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                  <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Status
+                  </dt>
+                  <dd className="sm:col-span-2 font-mono text-xs text-foreground bg-muted px-2 py-1 rounded">
+                    {selectedAttempt.status}
+                  </dd>
+                </div>
+              </dl>
+            </CardContent>
+          </Card>
 
-              <Card className="bg-card border-border">
-                <CardHeader className="pb-2 border-b border-border/50">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Zap size={16} className="text-warning" />
-                    Attempt Usage & Cache
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <dl className="space-y-4">
-                    <div className="flex justify-between items-center border-b border-border/30 pb-2">
-                      <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Input Tokens
-                      </dt>
-                      <dd className="text-sm text-foreground font-mono font-medium">
-                        {selectedAttempt.inputTokenCount.toLocaleString()}
-                      </dd>
-                    </div>
-                    <div className="flex justify-between items-center border-b border-border/30 pb-2">
-                      <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Output Tokens
-                      </dt>
-                      <dd className="text-sm text-foreground font-mono font-medium">
-                        {selectedAttempt.outputTokenCount.toLocaleString()}
-                      </dd>
-                    </div>
-                    <div className="flex justify-between items-center border-b border-border/30 pb-2">
-                      <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Cache Read
-                      </dt>
-                      <dd className="text-sm text-violet-400 font-mono font-medium">
-                        {selectedAttempt.cacheReadCount.toLocaleString()}
-                      </dd>
-                    </div>
-                    <div className="flex justify-between items-center border-b border-border/30 pb-2">
-                      <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Cache Write
-                      </dt>
-                      <dd className="text-sm text-amber-400 font-mono font-medium">
-                        {selectedAttempt.cacheWriteCount.toLocaleString()}
-                      </dd>
-                    </div>
-                    {(selectedAttempt.cache5mWriteCount > 0 ||
-                      selectedAttempt.cache1hWriteCount > 0) && (
-                      <div className="flex justify-between items-center border-b border-border/30 pb-2 pl-4">
-                        <dt className="text-xs font-medium text-muted-foreground/70 tracking-wider">
-                          <span className="text-cyan-400/80">5m:</span>{' '}
-                          {selectedAttempt.cache5mWriteCount}
-                          <span className="mx-2">|</span>
-                          <span className="text-orange-400/80">1h:</span>{' '}
-                          {selectedAttempt.cache1hWriteCount}
-                        </dt>
-                      </div>
-                    )}
-                    <div className="flex justify-between items-center">
-                      <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Cost
-                      </dt>
-                      <dd className="text-sm text-blue-400 font-mono font-medium">
-                        {formatCost(selectedAttempt.cost)}
-                      </dd>
-                    </div>
-                  </dl>
-                </CardContent>
-              </Card>
-            </div>
-        </TabsContent>
-      </Tabs>
-  )
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-2 border-b border-border/50">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Zap size={16} className="text-warning" />
+                Attempt Usage & Cache
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <dl className="space-y-4">
+                <div className="flex justify-between items-center border-b border-border/30 pb-2">
+                  <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Input Tokens
+                  </dt>
+                  <dd className="text-sm text-foreground font-mono font-medium">
+                    {selectedAttempt.inputTokenCount.toLocaleString()}
+                  </dd>
+                </div>
+                <div className="flex justify-between items-center border-b border-border/30 pb-2">
+                  <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Output Tokens
+                  </dt>
+                  <dd className="text-sm text-foreground font-mono font-medium">
+                    {selectedAttempt.outputTokenCount.toLocaleString()}
+                  </dd>
+                </div>
+                <div className="flex justify-between items-center border-b border-border/30 pb-2">
+                  <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Cache Read
+                  </dt>
+                  <dd className="text-sm text-violet-400 font-mono font-medium">
+                    {selectedAttempt.cacheReadCount.toLocaleString()}
+                  </dd>
+                </div>
+                <div className="flex justify-between items-center border-b border-border/30 pb-2">
+                  <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Cache Write
+                  </dt>
+                  <dd className="text-sm text-amber-400 font-mono font-medium">
+                    {selectedAttempt.cacheWriteCount.toLocaleString()}
+                  </dd>
+                </div>
+                {(selectedAttempt.cache5mWriteCount > 0 ||
+                  selectedAttempt.cache1hWriteCount > 0) && (
+                  <div className="flex justify-between items-center border-b border-border/30 pb-2 pl-4">
+                    <dt className="text-xs font-medium text-muted-foreground/70 tracking-wider">
+                      <span className="text-cyan-400/80">5m:</span>{' '}
+                      {selectedAttempt.cache5mWriteCount}
+                      <span className="mx-2">|</span>
+                      <span className="text-orange-400/80">1h:</span>{' '}
+                      {selectedAttempt.cache1hWriteCount}
+                    </dt>
+                  </div>
+                )}
+                <div className="flex justify-between items-center">
+                  <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Cost
+                  </dt>
+                  <dd className="text-sm text-blue-400 font-mono font-medium">
+                    {formatCost(selectedAttempt.cost)}
+                  </dd>
+                </div>
+              </dl>
+            </CardContent>
+          </Card>
+        </div>
+      </TabsContent>
+    </Tabs>
+  );
 }

@@ -1,6 +1,6 @@
-import { useEffect, useState, useCallback } from 'react'
-import { useTranslation } from 'react-i18next'
-import type { TFunction } from 'i18next'
+import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
   Snowflake,
   Clock,
@@ -20,59 +20,58 @@ import {
   CheckCircle2,
   XCircle,
   Trash2,
-} from 'lucide-react'
-import type {
-  Cooldown,
-  ProviderStats,
-  ClientType,
-} from '@/lib/transport/types'
-import type { ProviderConfigItem } from '@/pages/client-routes/types'
-import { useCooldowns } from '@/hooks/use-cooldowns'
-import { Button, Switch } from '@/components/ui'
-import { getProviderColor, type ProviderType } from '@/lib/theme'
-import { cn } from '@/lib/utils'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+} from 'lucide-react';
+import type { Cooldown, ProviderStats, ClientType } from '@/lib/transport/types';
+import type { ProviderConfigItem } from '@/pages/client-routes/types';
+import { useCooldowns } from '@/hooks/use-cooldowns';
+import { Button, Switch } from '@/components/ui';
+import { getProviderColor, type ProviderType } from '@/lib/theme';
+import { cn } from '@/lib/utils';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 interface ProviderDetailsDialogProps {
-  item: ProviderConfigItem | null
-  clientType: ClientType
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  stats?: ProviderStats
-  cooldown?: Cooldown | null
-  streamingCount: number
-  onToggle: () => void
-  isToggling: boolean
-  onDelete?: () => void
-  onClearCooldown?: () => void
-  isClearingCooldown?: boolean
+  item: ProviderConfigItem | null;
+  clientType: ClientType;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  stats?: ProviderStats;
+  cooldown?: Cooldown | null;
+  streamingCount: number;
+  onToggle: () => void;
+  isToggling: boolean;
+  onDelete?: () => void;
+  onClearCooldown?: () => void;
+  isClearingCooldown?: boolean;
 }
 
 // Reason 信息和图标 - 使用翻译
 const getReasonInfo = (t: TFunction) => ({
   server_error: {
     label: t('provider.reasons.serverError'),
-    description: t('provider.reasons.serverErrorDesc', '上游服务器返回 5xx 错误，系统自动进入冷却保护'),
+    description: t(
+      'provider.reasons.serverErrorDesc',
+      '上游服务器返回 5xx 错误，系统自动进入冷却保护',
+    ),
     icon: Server,
     color: 'text-rose-500 dark:text-rose-400',
-    bgColor:
-      'bg-rose-500/10 dark:bg-rose-500/15 border-rose-500/30 dark:border-rose-500/25',
+    bgColor: 'bg-rose-500/10 dark:bg-rose-500/15 border-rose-500/30 dark:border-rose-500/25',
   },
   network_error: {
     label: t('provider.reasons.networkError'),
-    description: t('provider.reasons.networkErrorDesc', '无法连接到上游服务器，可能是网络故障或服务器宕机'),
+    description: t(
+      'provider.reasons.networkErrorDesc',
+      '无法连接到上游服务器，可能是网络故障或服务器宕机',
+    ),
     icon: Wifi,
     color: 'text-amber-600 dark:text-amber-400',
-    bgColor:
-      'bg-amber-500/10 dark:bg-amber-500/15 border-amber-500/30 dark:border-amber-500/25',
+    bgColor: 'bg-amber-500/10 dark:bg-amber-500/15 border-amber-500/30 dark:border-amber-500/25',
   },
   quota_exhausted: {
     label: t('provider.reasons.quotaExhausted'),
     description: t('provider.reasons.quotaExhaustedDesc', 'API 配额已用完，等待配额重置'),
     icon: AlertCircle,
     color: 'text-rose-500 dark:text-rose-400',
-    bgColor:
-      'bg-rose-500/10 dark:bg-rose-500/15 border-rose-500/30 dark:border-rose-500/25',
+    bgColor: 'bg-rose-500/10 dark:bg-rose-500/15 border-rose-500/30 dark:border-rose-500/25',
   },
   rate_limit_exceeded: {
     label: t('provider.reasons.rateLimitExceeded'),
@@ -97,37 +96,37 @@ const getReasonInfo = (t: TFunction) => ({
     color: 'text-muted-foreground',
     bgColor: 'bg-muted/50 border-border',
   },
-})
+});
 
 // 格式化 Token 数量
 function formatTokens(count: number): string {
   if (count >= 1_000_000) {
-    return `${(count / 1_000_000).toFixed(1)}M`
+    return `${(count / 1_000_000).toFixed(1)}M`;
   }
   if (count >= 1_000) {
-    return `${(count / 1_000).toFixed(1)}K`
+    return `${(count / 1_000).toFixed(1)}K`;
   }
-  return count.toString()
+  return count.toString();
 }
 
 // 格式化成本 (微美元 → 美元)
 function formatCost(microUsd: number): string {
-  const usd = microUsd / 1_000_000
+  const usd = microUsd / 1_000_000;
   if (usd >= 1) {
-    return `$${usd.toFixed(2)}`
+    return `$${usd.toFixed(2)}`;
   }
   if (usd >= 0.01) {
-    return `$${usd.toFixed(3)}`
+    return `$${usd.toFixed(3)}`;
   }
-  return `$${usd.toFixed(4)}`
+  return `$${usd.toFixed(4)}`;
 }
 
 // 计算缓存利用率
 function calcCacheRate(stats: ProviderStats): number {
-  const cacheTotal = stats.totalCacheRead + stats.totalCacheWrite
-  const total = stats.totalInputTokens + stats.totalOutputTokens + cacheTotal
-  if (total === 0) return 0
-  return (cacheTotal / total) * 100
+  const cacheTotal = stats.totalCacheRead + stats.totalCacheWrite;
+  const total = stats.totalInputTokens + stats.totalOutputTokens + cacheTotal;
+  if (total === 0) return 0;
+  return (cacheTotal / total) * 100;
 }
 
 export function ProviderDetailsDialog({
@@ -144,36 +143,36 @@ export function ProviderDetailsDialog({
   onClearCooldown,
   isClearingCooldown,
 }: ProviderDetailsDialogProps) {
-  const { t, i18n } = useTranslation()
-  const REASON_INFO = getReasonInfo(t)
-  const { formatRemaining } = useCooldowns()
+  const { t, i18n } = useTranslation();
+  const REASON_INFO = getReasonInfo(t);
+  const { formatRemaining } = useCooldowns();
 
   // 计算初始倒计时值
   const getInitialCountdown = useCallback(() => {
-    return cooldown ? formatRemaining(cooldown) : ''
-  }, [cooldown, formatRemaining])
+    return cooldown ? formatRemaining(cooldown) : '';
+  }, [cooldown, formatRemaining]);
 
-  const [liveCountdown, setLiveCountdown] = useState<string>(getInitialCountdown)
+  const [liveCountdown, setLiveCountdown] = useState<string>(getInitialCountdown);
 
   // 每秒更新倒计时
   useEffect(() => {
-    if (!cooldown) return
+    if (!cooldown) return;
 
     const interval = setInterval(() => {
-      setLiveCountdown(formatRemaining(cooldown))
-    }, 1000)
+      setLiveCountdown(formatRemaining(cooldown));
+    }, 1000);
 
-    return () => clearInterval(interval)
-  }, [cooldown, formatRemaining])
+    return () => clearInterval(interval);
+  }, [cooldown, formatRemaining]);
 
-  if (!item) return null
+  if (!item) return null;
 
-  const { provider, enabled, route, isNative } = item
-  const color = getProviderColor(provider.type as ProviderType)
-  const isInCooldown = !!cooldown
+  const { provider, enabled, route, isNative } = item;
+  const color = getProviderColor(provider.type as ProviderType);
+  const isInCooldown = !!cooldown;
 
   const formatUntilTime = (until: string) => {
-    const date = new Date(until)
+    const date = new Date(until);
     return date.toLocaleString(i18n.resolvedLanguage ?? i18n.language, {
       month: '2-digit',
       day: '2-digit',
@@ -181,14 +180,14 @@ export function ProviderDetailsDialog({
       minute: '2-digit',
       second: '2-digit',
       hour12: false,
-    })
-  }
+    });
+  };
 
   const endpoint =
     provider.config?.custom?.clientBaseURL?.[clientType] ||
     provider.config?.custom?.baseURL ||
     provider.config?.antigravity?.endpoint ||
-    t('provider.defaultEndpoint')
+    t('provider.defaultEndpoint');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -210,18 +209,12 @@ export function ProviderDetailsDialog({
               <span
                 className={cn(
                   'text-xs font-bold',
-                  enabled
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-muted-foreground'
+                  enabled ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground',
                 )}
               >
                 {enabled ? t('provider.status.on') : t('provider.status.off')}
               </span>
-              <Switch
-                checked={enabled}
-                onCheckedChange={onToggle}
-                disabled={isToggling}
-              />
+              <Switch checked={enabled} onCheckedChange={onToggle} disabled={isToggling} />
             </div>
             <div className="w-px h-6 bg-border" />
             <Button
@@ -241,7 +234,7 @@ export function ProviderDetailsDialog({
                 'relative w-14 h-14 lg:w-16 lg:h-16 rounded-2xl flex items-center justify-center border shadow-lg',
                 isInCooldown
                   ? 'bg-cyan-500/10 dark:bg-cyan-950/40 border-cyan-500/40 dark:border-cyan-500/30'
-                  : 'bg-muted border-border'
+                  : 'bg-muted border-border',
               )}
               style={!isInCooldown ? { color } : {}}
             >
@@ -250,7 +243,7 @@ export function ProviderDetailsDialog({
                   'text-2xl lg:text-3xl font-black',
                   isInCooldown
                     ? 'text-cyan-400 dark:text-cyan-300 opacity-20 scale-150 blur-[1px]'
-                    : ''
+                    : '',
                 )}
               >
                 {provider.name.charAt(0).toUpperCase()}
@@ -314,9 +307,7 @@ export function ProviderDetailsDialog({
                     <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
                       Client Type
                     </div>
-                    <div className="text-xs text-foreground font-semibold">
-                      {clientType}
-                    </div>
+                    <div className="text-xs text-foreground font-semibold">{clientType}</div>
                   </div>
                   {route && (
                     <div>
@@ -399,17 +390,15 @@ export function ProviderDetailsDialog({
                         >
                           {(() => {
                             const Icon =
-                              REASON_INFO[cooldown.reason]?.icon ||
-                              REASON_INFO.unknown.icon
-                            return <Icon size={18} />
+                              REASON_INFO[cooldown.reason]?.icon || REASON_INFO.unknown.icon;
+                            return <Icon size={18} />;
                           })()}
                         </div>
                         <div>
                           <h3
                             className={`text-sm font-bold ${REASON_INFO[cooldown.reason]?.color || REASON_INFO.unknown.color} mb-1`}
                           >
-                            {REASON_INFO[cooldown.reason]?.label ||
-                              REASON_INFO.unknown.label}
+                            {REASON_INFO[cooldown.reason]?.label || REASON_INFO.unknown.label}
                           </h3>
                           <p className="text-xs text-muted-foreground leading-relaxed">
                             {REASON_INFO[cooldown.reason]?.description ||
@@ -432,13 +421,13 @@ export function ProviderDetailsDialog({
                         {liveCountdown}
                       </div>
                       {(() => {
-                        const untilDateStr = formatUntilTime(cooldown.untilTime)
+                        const untilDateStr = formatUntilTime(cooldown.untilTime);
                         return (
                           <div className="relative mt-2 text-[10px] text-teal-600/70 dark:text-teal-400/70 font-mono flex items-center gap-2">
                             <Clock size={10} />
                             {untilDateStr}
                           </div>
-                        )
+                        );
                       })()}
                     </div>
                   </div>
@@ -449,9 +438,7 @@ export function ProviderDetailsDialog({
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <TrendingUp size={14} />
-                  <span className="text-xs font-bold uppercase tracking-wider">
-                    Statistics
-                  </span>
+                  <span className="text-xs font-bold uppercase tracking-wider">Statistics</span>
                 </div>
 
                 {stats && stats.totalRequests > 0 ? (
@@ -459,19 +446,14 @@ export function ProviderDetailsDialog({
                     {/* Requests */}
                     <div className="p-3 rounded-lg bg-linear-to-br from-slate-50 to-slate-100/50 dark:from-slate-900/50 dark:to-slate-800/30 border border-slate-200 dark:border-slate-700/50 shadow-sm hover:shadow-md transition-shadow">
                       <div className="flex items-center gap-1.5 mb-2">
-                        <Hash
-                          size={12}
-                          className="text-slate-500 dark:text-slate-400"
-                        />
+                        <Hash size={12} className="text-slate-500 dark:text-slate-400" />
                         <span className="text-[9px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                           Requests
                         </span>
                       </div>
                       <div className="space-y-1">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-slate-600 dark:text-slate-400">
-                            Total
-                          </span>
+                          <span className="text-slate-600 dark:text-slate-400">Total</span>
                           <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
                             {stats.totalRequests}
                           </span>
@@ -498,10 +480,7 @@ export function ProviderDetailsDialog({
                     {/* Success Rate */}
                     <div className="p-3 rounded-lg bg-linear-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 shadow-sm hover:shadow-md transition-shadow">
                       <div className="flex items-center gap-1.5 mb-2">
-                        <Activity
-                          size={12}
-                          className="text-emerald-600 dark:text-emerald-400"
-                        />
+                        <Activity size={12} className="text-emerald-600 dark:text-emerald-400" />
                         <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
                           Success Rate
                         </span>
@@ -514,7 +493,7 @@ export function ProviderDetailsDialog({
                               ? 'text-emerald-600 dark:text-emerald-400'
                               : stats.successRate >= 90
                                 ? 'text-blue-600 dark:text-blue-400'
-                                : 'text-amber-600 dark:text-amber-400'
+                                : 'text-amber-600 dark:text-amber-400',
                           )}
                         >
                           {Math.round(stats.successRate)}%
@@ -525,39 +504,28 @@ export function ProviderDetailsDialog({
                     {/* Tokens */}
                     <div className="p-3 rounded-lg bg-linear-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 border border-blue-200 dark:border-blue-800/50 shadow-sm hover:shadow-md transition-shadow">
                       <div className="flex items-center gap-1.5 mb-2">
-                        <Zap
-                          size={12}
-                          className="text-blue-600 dark:text-blue-400"
-                        />
+                        <Zap size={12} className="text-blue-600 dark:text-blue-400" />
                         <span className="text-[9px] font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">
                           Tokens
                         </span>
                       </div>
                       <div className="space-y-1">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-blue-600 dark:text-blue-400">
-                            In
-                          </span>
+                          <span className="text-blue-600 dark:text-blue-400">In</span>
                           <span className="font-mono font-bold text-blue-700 dark:text-blue-300">
                             {formatTokens(stats.totalInputTokens)}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-purple-600 dark:text-purple-400">
-                            Out
-                          </span>
+                          <span className="text-purple-600 dark:text-purple-400">Out</span>
                           <span className="font-mono font-bold text-purple-700 dark:text-purple-300">
                             {formatTokens(stats.totalOutputTokens)}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-cyan-600 dark:text-cyan-400">
-                            Cache
-                          </span>
+                          <span className="text-cyan-600 dark:text-cyan-400">Cache</span>
                           <span className="font-mono font-bold text-cyan-700 dark:text-cyan-300">
-                            {formatTokens(
-                              stats.totalCacheRead + stats.totalCacheWrite
-                            )}
+                            {formatTokens(stats.totalCacheRead + stats.totalCacheWrite)}
                           </span>
                         </div>
                       </div>
@@ -566,10 +534,7 @@ export function ProviderDetailsDialog({
                     {/* Cost */}
                     <div className="p-3 rounded-lg bg-linear-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/20 border border-purple-200 dark:border-purple-800/50 shadow-sm hover:shadow-md transition-shadow">
                       <div className="flex items-center gap-1.5 mb-2">
-                        <DollarSign
-                          size={12}
-                          className="text-purple-600 dark:text-purple-400"
-                        />
+                        <DollarSign size={12} className="text-purple-600 dark:text-purple-400" />
                         <span className="text-[9px] font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">
                           Cost
                         </span>
@@ -598,5 +563,5 @@ export function ProviderDetailsDialog({
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

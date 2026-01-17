@@ -1,57 +1,45 @@
-import { useState, useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
-import {
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Input,
-  Badge,
-} from '@/components/ui'
-import {
-  useRetryConfigs,
-  useUpdateRetryConfig,
-  useCreateRetryConfig,
-} from '@/hooks/queries'
-import { Save, RefreshCw, AlertTriangle, ShieldCheck } from 'lucide-react'
-import type { RetryConfig } from '@/lib/transport'
+import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Button, Card, CardContent, CardHeader, CardTitle, Input, Badge } from '@/components/ui';
+import { useRetryConfigs, useUpdateRetryConfig, useCreateRetryConfig } from '@/hooks/queries';
+import { Save, RefreshCw, AlertTriangle, ShieldCheck } from 'lucide-react';
+import type { RetryConfig } from '@/lib/transport';
 
 export function RetryConfigsPage() {
-  const { t } = useTranslation()
-  const { data: configs, isLoading, refetch } = useRetryConfigs()
-  const updateConfig = useUpdateRetryConfig()
-  const createConfig = useCreateRetryConfig()
+  const { t } = useTranslation();
+  const { data: configs, isLoading, refetch } = useRetryConfigs();
+  const updateConfig = useUpdateRetryConfig();
+  const createConfig = useCreateRetryConfig();
 
-  const [defaultConfig, setDefaultConfig] = useState<RetryConfig | undefined>()
-  const [hasChanges, setHasChanges] = useState(false)
+  const [defaultConfig, setDefaultConfig] = useState<RetryConfig | undefined>();
+  const [hasChanges, setHasChanges] = useState(false);
 
   // Form state
-  const [maxRetries, setMaxRetries] = useState('3')
-  const [initialInterval, setInitialInterval] = useState('1000')
-  const [backoffRate, setBackoffRate] = useState('2')
-  const [maxInterval, setMaxInterval] = useState('30000')
+  const [maxRetries, setMaxRetries] = useState('3');
+  const [initialInterval, setInitialInterval] = useState('1000');
+  const [backoffRate, setBackoffRate] = useState('2');
+  const [maxInterval, setMaxInterval] = useState('30000');
 
   useEffect(() => {
     if (configs) {
-      const def = configs.find(c => c.isDefault)
+      const def = configs.find((c) => c.isDefault);
       if (def) {
-        setDefaultConfig(def)
+        setDefaultConfig(def);
         // Only update form if not already edited or if it's the first load
         if (!hasChanges) {
-          setMaxRetries(String(def.maxRetries))
-          setInitialInterval(String(def.initialInterval / 1_000_000))
-          setBackoffRate(String(def.backoffRate))
-          setMaxInterval(String(def.maxInterval / 1_000_000))
+          setMaxRetries(String(def.maxRetries));
+          setInitialInterval(String(def.initialInterval / 1_000_000));
+          setBackoffRate(String(def.backoffRate));
+          setMaxInterval(String(def.maxInterval / 1_000_000));
         }
       }
     }
-  }, [configs]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [configs]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleInputChange = (setter: (val: string) => void, value: string) => {
-    setter(value)
-    setHasChanges(true)
-  }
+    setter(value);
+    setHasChanges(true);
+  };
 
   const handleSave = () => {
     const data = {
@@ -61,52 +49,50 @@ export function RetryConfigsPage() {
       initialInterval: Number(initialInterval) * 1_000_000,
       backoffRate: Number(backoffRate),
       maxInterval: Number(maxInterval) * 1_000_000,
-    }
+    };
 
     if (defaultConfig) {
       updateConfig.mutate(
         { id: defaultConfig.id, data },
         {
           onSuccess: () => {
-            setHasChanges(false)
-            refetch()
+            setHasChanges(false);
+            refetch();
           },
-        }
-      )
+        },
+      );
     } else {
       // Create if doesn't exist
       createConfig.mutate(data, {
         onSuccess: () => {
-          setHasChanges(false)
-          refetch()
+          setHasChanges(false);
+          refetch();
         },
-      })
+      });
     }
-  }
+  };
 
   const handleReset = () => {
     if (defaultConfig) {
-      setMaxRetries(String(defaultConfig.maxRetries))
-      setInitialInterval(String(defaultConfig.initialInterval / 1_000_000))
-      setBackoffRate(String(defaultConfig.backoffRate))
-      setMaxInterval(String(defaultConfig.maxInterval / 1_000_000))
-      setHasChanges(false)
+      setMaxRetries(String(defaultConfig.maxRetries));
+      setInitialInterval(String(defaultConfig.initialInterval / 1_000_000));
+      setBackoffRate(String(defaultConfig.backoffRate));
+      setMaxInterval(String(defaultConfig.maxInterval / 1_000_000));
+      setHasChanges(false);
     }
-  }
+  };
 
-  const isSaving = updateConfig.isPending || createConfig.isPending
+  const isSaving = updateConfig.isPending || createConfig.isPending;
 
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="flex flex-col items-center gap-2">
           <RefreshCw className="h-8 w-8 animate-spin text-accent" />
-          <p className="text-sm text-text-secondary">
-            {t('common.loading')}
-          </p>
+          <p className="text-sm text-text-secondary">{t('common.loading')}</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -121,9 +107,7 @@ export function RetryConfigsPage() {
             <h2 className="text-lg font-semibold text-text-primary leading-tight">
               {t('retryConfigs.title')}
             </h2>
-            <p className="text-xs text-text-secondary">
-              {t('retryConfigs.description')}
-            </p>
+            <p className="text-xs text-text-secondary">{t('retryConfigs.description')}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -132,11 +116,7 @@ export function RetryConfigsPage() {
               {t('retryConfigs.discardChanges')}
             </Button>
           )}
-          <Button
-            onClick={handleSave}
-            disabled={!hasChanges || isSaving}
-            className="gap-2"
-          >
+          <Button onClick={handleSave} disabled={!hasChanges || isSaving} className="gap-2">
             {isSaving ? (
               <RefreshCw className="h-4 w-4 animate-spin" />
             ) : (
@@ -186,9 +166,7 @@ export function RetryConfigsPage() {
                   <Input
                     type="number"
                     value={maxRetries}
-                    onChange={e =>
-                      handleInputChange(setMaxRetries, e.target.value)
-                    }
+                    onChange={(e) => handleInputChange(setMaxRetries, e.target.value)}
                     min="0"
                     max="10"
                     className="max-w-[120px] font-mono"
@@ -212,9 +190,7 @@ export function RetryConfigsPage() {
                     <Input
                       type="number"
                       value={initialInterval}
-                      onChange={e =>
-                        handleInputChange(setInitialInterval, e.target.value)
-                      }
+                      onChange={(e) => handleInputChange(setInitialInterval, e.target.value)}
                       min="0"
                       className="font-mono pr-12"
                     />
@@ -235,9 +211,7 @@ export function RetryConfigsPage() {
                     <Input
                       type="number"
                       value={backoffRate}
-                      onChange={e =>
-                        handleInputChange(setBackoffRate, e.target.value)
-                      }
+                      onChange={(e) => handleInputChange(setBackoffRate, e.target.value)}
                       min="1"
                       step="0.1"
                       className="font-mono pr-8"
@@ -259,9 +233,7 @@ export function RetryConfigsPage() {
                     <Input
                       type="number"
                       value={maxInterval}
-                      onChange={e =>
-                        handleInputChange(setMaxInterval, e.target.value)
-                      }
+                      onChange={(e) => handleInputChange(setMaxInterval, e.target.value)}
                       min="0"
                       className="font-mono pr-12"
                     />
@@ -275,10 +247,12 @@ export function RetryConfigsPage() {
               <div className="bg-muted/30 rounded-lg p-4 text-xs border border-border/50">
                 <div className="text-text-muted mb-3">
                   {t('retryConfigs.totalAttempts')}:{' '}
-                  <span className="text-text-primary font-semibold">
-                    {Number(maxRetries) + 1}
-                  </span>{' '}
-                  ({t('retryConfigs.initialPlusRetries', { retries: maxRetries })})
+                  <span className="text-text-primary font-semibold">{Number(maxRetries) + 1}</span>{' '}
+                  (
+                  {t('retryConfigs.initialPlusRetries', {
+                    retries: maxRetries,
+                  })}
+                  )
                 </div>
                 <div className="space-y-1 font-mono text-muted-foreground">
                   <div className="flex justify-between">
@@ -287,27 +261,25 @@ export function RetryConfigsPage() {
                       {t('retryConfigs.executeImmediately')}
                     </span>
                   </div>
-                  {Array.from(
-                    { length: Math.min(Number(maxRetries), 5) },
-                    (_, i) => {
-                      const delay = Math.min(
-                        Number(maxInterval),
-                        Number(initialInterval) *
-                          Math.pow(Number(backoffRate), i)
-                      )
-                      return (
-                        <div key={i} className="flex justify-between">
-                          <span>{t('retryConfigs.retry', { num: i + 1 })}</span>
-                          <span className="text-text-primary">
-                            {t('retryConfigs.waitMs', { ms: delay.toFixed(0) })}
-                          </span>
-                        </div>
-                      )
-                    }
-                  )}
+                  {Array.from({ length: Math.min(Number(maxRetries), 5) }, (_, i) => {
+                    const delay = Math.min(
+                      Number(maxInterval),
+                      Number(initialInterval) * Math.pow(Number(backoffRate), i),
+                    );
+                    return (
+                      <div key={i} className="flex justify-between">
+                        <span>{t('retryConfigs.retry', { num: i + 1 })}</span>
+                        <span className="text-text-primary">
+                          {t('retryConfigs.waitMs', { ms: delay.toFixed(0) })}
+                        </span>
+                      </div>
+                    );
+                  })}
                   {Number(maxRetries) > 5 && (
                     <div className="text-text-muted">
-                      {t('retryConfigs.moreRetries', { count: Number(maxRetries) - 5 })}
+                      {t('retryConfigs.moreRetries', {
+                        count: Number(maxRetries) - 5,
+                      })}
                     </div>
                   )}
                 </div>
@@ -317,5 +289,5 @@ export function RetryConfigsPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

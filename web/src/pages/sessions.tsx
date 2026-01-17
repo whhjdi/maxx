@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Badge,
   Button,
@@ -11,13 +11,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
-import {
-  useSessions,
-  useProjects,
-  useUpdateSessionProject,
-} from '@/hooks/queries'
+} from '@/components/ui';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useSessions, useProjects, useUpdateSessionProject } from '@/hooks/queries';
 import {
   LayoutDashboard,
   Loader2,
@@ -27,19 +23,19 @@ import {
   Check,
   AlertCircle,
   FolderOpen,
-} from 'lucide-react'
-import type { Session } from '@/lib/transport'
-import { cn } from '@/lib/utils'
-import { ClientIcon } from '@/components/icons/client-icons'
+} from 'lucide-react';
+import type { Session } from '@/lib/transport';
+import { cn } from '@/lib/utils';
+import { ClientIcon } from '@/components/icons/client-icons';
 
 export function SessionsPage() {
-  const { t } = useTranslation()
-  const { data: sessions, isLoading } = useSessions()
-  const { data: projects } = useProjects()
-  const [selectedSession, setSelectedSession] = useState<Session | null>(null)
+  const { t } = useTranslation();
+  const { data: sessions, isLoading } = useSessions();
+  const { data: projects } = useProjects();
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
 
   // Create project ID to name mapping
-  const projectMap = new Map(projects?.map(p => [p.id, p.name]) ?? [])
+  const projectMap = new Map(projects?.map((p) => [p.id, p.name]) ?? []);
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -74,9 +70,7 @@ export function SessionsPage() {
                     <TableHead className="w-[60px] text-text-secondary">
                       {t('sessions.client')}
                     </TableHead>
-                    <TableHead className="text-text-secondary">
-                      {t('sessions.sessionId')}
-                    </TableHead>
+                    <TableHead className="text-text-secondary">{t('sessions.sessionId')}</TableHead>
                     <TableHead className="w-[150px] text-text-secondary">
                       {t('sessions.project')}
                     </TableHead>
@@ -86,7 +80,7 @@ export function SessionsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sessions?.map(session => (
+                  {sessions?.map((session) => (
                     <TableRow
                       key={session.id}
                       className="border-border hover:bg-accent cursor-pointer transition-colors"
@@ -100,10 +94,7 @@ export function SessionsPage() {
                         </div>
                       </TableCell>
                       <TableCell className="font-mono text-xs text-foreground">
-                        <span
-                          className="truncate max-w-[300px] block"
-                          title={session.sessionID}
-                        >
+                        <span className="truncate max-w-[300px] block" title={session.sessionID}>
                           {session.sessionID}
                         </span>
                       </TableCell>
@@ -114,8 +105,7 @@ export function SessionsPage() {
                           </span>
                         ) : (
                           <Badge variant="default" className="text-xs">
-                            {projectMap.get(session.projectID) ??
-                              `#${session.projectID}`}
+                            {projectMap.get(session.projectID) ?? `#${session.projectID}`}
                           </Badge>
                         )}
                       </TableCell>
@@ -126,10 +116,7 @@ export function SessionsPage() {
                   ))}
                   {(!sessions || sessions.length === 0) && (
                     <TableRow>
-                      <TableCell
-                        colSpan={4}
-                        className="h-32 text-center text-muted-foreground"
-                      >
+                      <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <Calendar className="h-8 w-8 opacity-20" />
                           <p>{t('sessions.noSessions')}</p>
@@ -151,53 +138,49 @@ export function SessionsPage() {
         onClose={() => setSelectedSession(null)}
       />
     </div>
-  )
+  );
 }
 
 interface SessionDetailModalProps {
-  session: Session | null
-  projects: { id: number; name: string }[]
-  onClose: () => void
+  session: Session | null;
+  projects: { id: number; name: string }[];
+  onClose: () => void;
 }
 
-function SessionDetailModal({
-  session,
-  projects,
-  onClose,
-}: SessionDetailModalProps) {
-  const { t } = useTranslation()
-  const [selectedProjectId, setSelectedProjectId] = useState<number>(0)
-  const updateSessionProject = useUpdateSessionProject()
+function SessionDetailModal({ session, projects, onClose }: SessionDetailModalProps) {
+  const { t } = useTranslation();
+  const [selectedProjectId, setSelectedProjectId] = useState<number>(0);
+  const updateSessionProject = useUpdateSessionProject();
 
   // Reset selected project when session changes
   useEffect(() => {
     if (session) {
-      setSelectedProjectId(session.projectID)
+      setSelectedProjectId(session.projectID);
     }
-  }, [session])
+  }, [session]);
 
   const handleSave = async () => {
-    if (!session) return
+    if (!session) return;
     try {
       await updateSessionProject.mutateAsync({
         sessionID: session.sessionID,
         projectID: selectedProjectId,
-      })
-      onClose()
+      });
+      onClose();
     } catch (error) {
-      console.error('Failed to update session project:', error)
+      console.error('Failed to update session project:', error);
     }
-  }
+  };
 
-  const hasChanges = session ? selectedProjectId !== session.projectID : false
+  const hasChanges = session ? selectedProjectId !== session.projectID : false;
 
-  if (!session) return null
+  if (!session) return null;
 
   return (
-    <Dialog open={!!session} onOpenChange={open => !open && onClose()}>
+    <Dialog open={!!session} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         showCloseButton={false}
-        className="overflow-hidden p-0 w-full max-w-[32rem] bg-card"
+        className="overflow-hidden p-0 w-full max-w-lg bg-card"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
@@ -258,14 +241,14 @@ function SessionDetailModal({
                   'flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-all',
                   selectedProjectId === 0
                     ? 'border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/25'
-                    : 'border-border bg-muted text-text-secondary hover:bg-accent'
+                    : 'border-border bg-muted text-text-secondary hover:bg-accent',
                 )}
               >
                 <X size={14} />
                 <span>{t('sessions.unassigned')}</span>
               </button>
               {/* Project options */}
-              {projects.map(project => (
+              {projects.map((project) => (
                 <button
                   key={project.id}
                   type="button"
@@ -274,7 +257,7 @@ function SessionDetailModal({
                     'flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-all',
                     selectedProjectId === project.id
                       ? 'border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/25'
-                      : 'border-border bg-muted text-text-primary hover:bg-accent'
+                      : 'border-border bg-muted text-text-primary hover:bg-accent',
                   )}
                 >
                   <FolderOpen size={14} />
@@ -282,9 +265,7 @@ function SessionDetailModal({
                 </button>
               ))}
             </div>
-            <p className="text-[10px] text-text-muted mt-2">
-              {t('sessions.projectBindingHint')}
-            </p>
+            <p className="text-[10px] text-text-muted mt-2">{t('sessions.projectBindingHint')}</p>
           </div>
 
           {/* Update result info */}
@@ -292,7 +273,9 @@ function SessionDetailModal({
             <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-400/10 px-3 py-2 rounded-md">
               <Check size={14} />
               <span>
-                {t('sessions.updatedRequests', { count: updateSessionProject.data.updatedRequests })}
+                {t('sessions.updatedRequests', {
+                  count: updateSessionProject.data.updatedRequests,
+                })}
               </span>
             </div>
           )}
@@ -313,10 +296,7 @@ function SessionDetailModal({
           <Button
             onClick={handleSave}
             disabled={!hasChanges || updateSessionProject.isPending}
-            className={cn(
-              'min-w-[100px]',
-              hasChanges && 'bg-accent hover:bg-accent-hover'
-            )}
+            className={cn('min-w-[100px]', hasChanges && 'bg-accent hover:bg-accent-hover')}
           >
             {updateSessionProject.isPending ? (
               <Loader2 size={14} className="animate-spin" />
@@ -327,5 +307,5 @@ function SessionDetailModal({
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

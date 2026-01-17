@@ -1,34 +1,30 @@
-import { useState } from 'react'
-import { Radio, Check, Copy } from 'lucide-react'
-import { useProxyStatus } from '@/hooks/queries'
-import { useSidebar } from '@/components/ui/sidebar'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
-import { Button } from '../ui'
-import { useTranslation } from 'react-i18next'
+import { useState } from 'react';
+import { Radio, Check, Copy } from 'lucide-react';
+import { useProxyStatus } from '@/hooks/queries';
+import { useSidebar } from '@/components/ui/sidebar';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Button } from '../ui';
+import { useTranslation } from 'react-i18next';
 
 export function NavProxyStatus() {
-  const { t } = useTranslation()
-  const { data: proxyStatus } = useProxyStatus()
-  const { state } = useSidebar()
-  const [copied, setCopied] = useState(false)
+  const { t } = useTranslation();
+  const { data: proxyStatus } = useProxyStatus();
+  const { state } = useSidebar();
+  const [copied, setCopied] = useState(false);
 
-  const proxyAddress = proxyStatus?.address ?? '...'
-  const fullUrl = `http://${proxyAddress}`
-  const isCollapsed = state === 'collapsed'
+  const proxyAddress = proxyStatus?.address ?? '...';
+  const fullUrl = `http://${proxyAddress}`;
+  const isCollapsed = state === 'collapsed';
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(fullUrl)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      await navigator.clipboard.writeText(fullUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy:', err)
+      console.error('Failed to copy:', err);
     }
-  }
+  };
 
   if (isCollapsed) {
     return (
@@ -60,7 +56,7 @@ export function NavProxyStatus() {
           </div>
         </TooltipContent>
       </Tooltip>
-    )
+    );
   }
 
   return (
@@ -75,17 +71,13 @@ export function NavProxyStatus() {
       </div>
       <div className="flex flex-col items-start flex-1 min-w-0">
         <span className="text-caption text-text-muted">{t('proxy.listeningOn')}</span>
-        <span className="font-mono font-medium text-text-primary  truncate">
-          {proxyAddress}
-        </span>
+        <span className="font-mono font-medium text-text-primary  truncate">{proxyAddress}</span>
       </div>
       <div className="shrink-0 text-muted-foreground relative w-4 h-4">
         <Copy
           size={14}
           className={`absolute inset-0 transition-all ${
-            copied
-              ? 'scale-0 opacity-0'
-              : 'scale-100 opacity-0 group-hover:opacity-100'
+            copied ? 'scale-0 opacity-0' : 'scale-100 opacity-0 group-hover:opacity-100'
           }`}
         />
         <Check
@@ -96,5 +88,5 @@ export function NavProxyStatus() {
         />
       </div>
     </Button>
-  )
+  );
 }

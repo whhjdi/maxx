@@ -4,10 +4,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { FolderOpen, AlertCircle, Loader2, Clock, X } from 'lucide-react';
 import { useProjects, useUpdateSessionProject, useRejectSession } from '@/hooks/queries';
 import type { NewSessionPendingEvent } from '@/lib/transport/types';
@@ -16,85 +13,81 @@ import { getClientName, getClientColor } from '@/components/icons/client-icons';
 import { useTranslation } from 'react-i18next';
 
 interface ForceProjectDialogProps {
-  event: NewSessionPendingEvent | null
-  onClose: () => void
-  timeoutSeconds: number
+  event: NewSessionPendingEvent | null;
+  onClose: () => void;
+  timeoutSeconds: number;
 }
 
-export function ForceProjectDialog({
-  event,
-  onClose,
-  timeoutSeconds,
-}: ForceProjectDialogProps) {
-  const { t } = useTranslation()
-  const { data: projects, isLoading } = useProjects()
-  const updateSessionProject = useUpdateSessionProject()
-  const rejectSession = useRejectSession()
-  const [selectedProjectId, setSelectedProjectId] = useState<number>(0)
-  const [remainingTime, setRemainingTime] = useState(timeoutSeconds)
-  const [eventId, setEventId] = useState<string | null>(null)
+export function ForceProjectDialog({ event, onClose, timeoutSeconds }: ForceProjectDialogProps) {
+  const { t } = useTranslation();
+  const { data: projects, isLoading } = useProjects();
+  const updateSessionProject = useUpdateSessionProject();
+  const rejectSession = useRejectSession();
+  const [selectedProjectId, setSelectedProjectId] = useState<number>(0);
+  const [remainingTime, setRemainingTime] = useState(timeoutSeconds);
+  const [eventId, setEventId] = useState<string | null>(null);
 
   // Reset state when event changes
   useEffect(() => {
     if (event && event.sessionID !== eventId) {
-      setEventId(event.sessionID)
-      setSelectedProjectId(0)
-      setRemainingTime(timeoutSeconds)
+      setEventId(event.sessionID);
+      setSelectedProjectId(0);
+      setRemainingTime(timeoutSeconds);
     }
-  }, [event, eventId, timeoutSeconds])
+  }, [event, eventId, timeoutSeconds]);
 
   // Countdown timer
   useEffect(() => {
-    if (!event) return
+    if (!event) return;
 
     const interval = setInterval(() => {
-      setRemainingTime(prev => {
+      setRemainingTime((prev) => {
         if (prev <= 1) {
-          clearInterval(interval)
-          return 0
+          clearInterval(interval);
+          return 0;
         }
-        return prev - 1
-      })
-    }, 1000)
+        return prev - 1;
+      });
+    }, 1000);
 
-    return () => clearInterval(interval)
-  }, [event])
+    return () => clearInterval(interval);
+  }, [event]);
 
   // 超时后关闭弹窗
   useEffect(() => {
     if (remainingTime === 0 && event) {
-      onClose()
+      onClose();
     }
-  }, [remainingTime, event, onClose])
+  }, [remainingTime, event, onClose]);
 
   const handleConfirm = async () => {
-    if (!event || selectedProjectId === 0) return
+    if (!event || selectedProjectId === 0) return;
 
     try {
       await updateSessionProject.mutateAsync({
         sessionID: event.sessionID,
         projectID: selectedProjectId,
-      })
-      onClose()
+      });
+      onClose();
     } catch (error) {
-      console.error('Failed to bind project:', error)
+      console.error('Failed to bind project:', error);
     }
-  }
+  };
 
   const handleReject = async () => {
-    if (!event) return
+    if (!event) return;
 
     try {
-      await rejectSession.mutateAsync(event.sessionID)
-      onClose()
+      await rejectSession.mutateAsync(event.sessionID);
+      onClose();
     } catch (error) {
-      console.error('Failed to reject session:', error)
+      console.error('Failed to reject session:', error);
     }
-  }
+  };
 
-  if (!event) return null
+  if (!event) return null;
 
-  const clientColor = getClientColor(event.clientType)
+  const clientColor = getClientColor(event.clientType);
 
   return (
     <Dialog open={!!event} onOpenChange={(open) => !open && onClose()}>
@@ -148,19 +141,19 @@ export function ForceProjectDialog({
               'relative overflow-hidden rounded-xl border p-5 flex flex-col items-center justify-center group',
               remainingTime <= 10
                 ? 'bg-linear-to-br from-red-950/30 to-transparent border-red-500/20'
-                : 'bg-linear-to-br from-amber-950/30 to-transparent border-amber-500/20'
+                : 'bg-linear-to-br from-amber-950/30 to-transparent border-amber-500/20',
             )}
           >
             <div
               className={cn(
                 'absolute inset-0 opacity-50 group-hover:opacity-100 transition-opacity',
-                remainingTime <= 10 ? 'bg-red-400/5' : 'bg-amber-400/5'
+                remainingTime <= 10 ? 'bg-red-400/5' : 'bg-amber-400/5',
               )}
             />
             <div
               className={cn(
                 'relative flex items-center gap-1.5 mb-1',
-                remainingTime <= 10 ? 'text-red-500' : 'text-amber-500'
+                remainingTime <= 10 ? 'text-red-500' : 'text-amber-500',
               )}
             >
               <Clock size={14} />
@@ -173,7 +166,7 @@ export function ForceProjectDialog({
                 'relative font-mono text-4xl font-bold tracking-widest tabular-nums',
                 remainingTime <= 10
                   ? 'text-red-400 drop-shadow-[0_0_8px_rgba(248,113,113,0.3)]'
-                  : 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.3)]'
+                  : 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.3)]',
               )}
             >
               {remainingTime}s
@@ -192,7 +185,7 @@ export function ForceProjectDialog({
               </label>
               {projects && projects.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
-                  {projects.map(project => (
+                  {projects.map((project) => (
                     <button
                       key={project.id}
                       type="button"
@@ -201,7 +194,7 @@ export function ForceProjectDialog({
                         'flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-all',
                         selectedProjectId === project.id
                           ? 'border-amber-500 bg-amber-500 text-white shadow-lg shadow-amber-500/25'
-                          : 'border-border bg-muted text-foreground hover:bg-accent hover:border-amber-500/50'
+                          : 'border-border bg-muted text-foreground hover:bg-accent hover:border-amber-500/50',
                       )}
                     >
                       <FolderOpen size={14} />
@@ -223,9 +216,7 @@ export function ForceProjectDialog({
               {/* Reject Button */}
               <button
                 onClick={handleReject}
-                disabled={
-                  rejectSession.isPending || updateSessionProject.isPending
-                }
+                disabled={rejectSession.isPending || updateSessionProject.isPending}
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:border-red-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {rejectSession.isPending ? (
@@ -256,9 +247,7 @@ export function ForceProjectDialog({
                   {updateSessionProject.isPending ? (
                     <>
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      <span className="text-sm font-bold text-white">
-                        绑定中...
-                      </span>
+                      <span className="text-sm font-bold text-white">绑定中...</span>
                     </>
                   ) : (
                     <>

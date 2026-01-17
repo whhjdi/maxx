@@ -74,7 +74,10 @@ export interface Transport {
 
   // ===== Session API =====
   getSessions(): Promise<Session[]>;
-  updateSessionProject(sessionID: string, projectID: number): Promise<{ session: Session; updatedRequests: number }>;
+  updateSessionProject(
+    sessionID: string,
+    projectID: number,
+  ): Promise<{ session: Session; updatedRequests: number }>;
   rejectSession(sessionID: string): Promise<Session>;
 
   // ===== RetryConfig API =====
@@ -116,7 +119,10 @@ export interface Transport {
   validateAntigravityToken(refreshToken: string): Promise<AntigravityTokenValidationResult>;
   validateAntigravityTokens(tokens: string[]): Promise<AntigravityBatchValidationResult>;
   validateAntigravityTokenText(tokenText: string): Promise<AntigravityBatchValidationResult>;
-  getAntigravityProviderQuota(providerId: number, forceRefresh?: boolean): Promise<AntigravityQuotaData>;
+  getAntigravityProviderQuota(
+    providerId: number,
+    forceRefresh?: boolean,
+  ): Promise<AntigravityQuotaData>;
   startAntigravityOAuth(): Promise<{ authURL: string; state: string }>;
 
   // ===== Model Mapping API =====

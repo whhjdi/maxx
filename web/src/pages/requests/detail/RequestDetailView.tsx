@@ -8,28 +8,24 @@ import {
   TabsList,
   TabsTrigger,
   TabsContent,
-} from '@/components/ui'
-import { Code, Database, Info, Zap } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
-import type { ProxyRequest, ClientType } from '@/lib/transport'
-import { cn } from '@/lib/utils'
-import {
-  ClientIcon,
-  getClientName,
-  getClientColor,
-} from '@/components/icons/client-icons'
-import { CopyButton, CopyAsCurlButton, EmptyState } from './components'
+} from '@/components/ui';
+import { Code, Database, Info, Zap } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import type { ProxyRequest, ClientType } from '@/lib/transport';
+import { cn } from '@/lib/utils';
+import { ClientIcon, getClientName, getClientColor } from '@/components/icons/client-icons';
+import { CopyButton, CopyAsCurlButton, EmptyState } from './components';
 
 interface RequestDetailViewProps {
-  request: ProxyRequest
-  activeTab: 'request' | 'response' | 'metadata'
-  setActiveTab: (tab: 'request' | 'response' | 'metadata') => void
-  formatJSON: (obj: unknown) => string
-  formatCost: (microUSD: number) => string
-  projectName?: string
-  sessionInfo?: { clientType: string; projectID: number }
-  projectMap: Map<number, string>
-  tokenName?: string
+  request: ProxyRequest;
+  activeTab: 'request' | 'response' | 'metadata';
+  setActiveTab: (tab: 'request' | 'response' | 'metadata') => void;
+  formatJSON: (obj: unknown) => string;
+  formatCost: (microUSD: number) => string;
+  projectName?: string;
+  sessionInfo?: { clientType: string; projectID: number };
+  projectMap: Map<number, string>;
+  tokenName?: string;
 }
 
 export function RequestDetailView({
@@ -43,11 +39,11 @@ export function RequestDetailView({
   projectMap,
   tokenName,
 }: RequestDetailViewProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation();
   return (
     <Tabs
       value={activeTab}
-      onValueChange={value => setActiveTab(value as typeof activeTab)}
+      onValueChange={(value) => setActiveTab(value as typeof activeTab)}
       className="flex flex-col h-full w-full min-w-0"
     >
       {/* Detail Header */}
@@ -72,9 +68,7 @@ export function RequestDetailView({
               <span className="text-text-muted">·</span>
               <span>{request.requestModel}</span>
               {request.cost > 0 && (
-                <span className="text-blue-400 font-medium">
-                  Cost: {formatCost(request.cost)}
-                </span>
+                <span className="text-blue-400 font-medium">Cost: {formatCost(request.cost)}</span>
               )}
             </div>
           </div>
@@ -95,10 +89,7 @@ export function RequestDetailView({
       </div>
 
       {/* Detail Content */}
-      <TabsContent
-        value="request"
-        className="flex-1 overflow-hidden flex flex-col min-w-0 mt-0"
-      >
+      <TabsContent value="request" className="flex-1 overflow-hidden flex flex-col min-w-0 mt-0">
         {request.requestInfo ? (
           <div className="flex-1 flex flex-col overflow-hidden p-6 gap-6 animate-fade-in min-w-0">
             <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border border-border shrink-0">
@@ -124,10 +115,7 @@ export function RequestDetailView({
                 </div>
                 <div className="flex-1 rounded-lg border border-border bg-muted/50 dark:bg-muted/30 p-4 overflow-auto shadow-inner relative group min-h-0">
                   <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] bg-card/80 backdrop-blur-sm"
-                    >
+                    <Badge variant="outline" className="text-[10px] bg-card/80 backdrop-blur-sm">
                       JSON
                     </Badge>
                   </div>
@@ -146,11 +134,9 @@ export function RequestDetailView({
                     <CopyButton
                       content={(() => {
                         try {
-                          return formatJSON(
-                            JSON.parse(request.requestInfo.body)
-                          )
+                          return formatJSON(JSON.parse(request.requestInfo.body));
                         } catch {
-                          return request.requestInfo.body
+                          return request.requestInfo.body;
                         }
                       })()}
                       label={t('common.copy')}
@@ -158,21 +144,16 @@ export function RequestDetailView({
                   </div>
                   <div className="flex-1 rounded-lg border border-border bg-muted/50 dark:bg-muted/30 p-4 overflow-auto shadow-inner relative group min-h-0">
                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Badge
-                        variant="outline"
-                        className="text-[10px] bg-card/80 backdrop-blur-sm"
-                      >
+                      <Badge variant="outline" className="text-[10px] bg-card/80 backdrop-blur-sm">
                         JSON
                       </Badge>
                     </div>
                     <pre className="text-xs font-mono text-foreground/95 whitespace-pre overflow-x-auto leading-relaxed">
                       {(() => {
                         try {
-                          return formatJSON(
-                            JSON.parse(request.requestInfo.body)
-                          )
+                          return formatJSON(JSON.parse(request.requestInfo.body));
                         } catch {
-                          return request.requestInfo.body
+                          return request.requestInfo.body;
                         }
                       })()}
                     </pre>
@@ -186,10 +167,7 @@ export function RequestDetailView({
         )}
       </TabsContent>
 
-      <TabsContent
-        value="response"
-        className="flex-1 overflow-hidden flex flex-col min-w-0 mt-0"
-      >
+      <TabsContent value="response" className="flex-1 overflow-hidden flex flex-col min-w-0 mt-0">
         {request.responseInfo ? (
           <div className="flex-1 flex flex-col overflow-hidden p-6 gap-6 animate-fade-in min-w-0">
             <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border border-border shrink-0">
@@ -198,14 +176,12 @@ export function RequestDetailView({
                   'px-2 py-1 rounded text-xs font-bold font-mono',
                   request.responseInfo.status >= 400
                     ? 'bg-red-400/10 text-red-400'
-                    : 'bg-blue-400/10 text-blue-400'
+                    : 'bg-blue-400/10 text-blue-400',
                 )}
               >
                 {request.responseInfo.status}
               </div>
-              <span className="text-sm text-muted-foreground font-medium">
-                Response Status
-              </span>
+              <span className="text-sm text-muted-foreground font-medium">Response Status</span>
             </div>
 
             <div className="flex flex-col min-h-0 flex-1 gap-6">
@@ -221,10 +197,7 @@ export function RequestDetailView({
                 </div>
                 <div className="flex-1 rounded-lg border border-border bg-muted/50 dark:bg-muted/30 p-4 overflow-auto shadow-inner relative group min-h-0">
                   <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] bg-card/80 backdrop-blur-sm"
-                    >
+                    <Badge variant="outline" className="text-[10px] bg-card/80 backdrop-blur-sm">
                       JSON
                     </Badge>
                   </div>
@@ -243,11 +216,9 @@ export function RequestDetailView({
                     <CopyButton
                       content={(() => {
                         try {
-                          return formatJSON(
-                            JSON.parse(request.responseInfo.body)
-                          )
+                          return formatJSON(JSON.parse(request.responseInfo.body));
                         } catch {
-                          return request.responseInfo.body
+                          return request.responseInfo.body;
                         }
                       })()}
                       label={t('common.copy')}
@@ -255,21 +226,16 @@ export function RequestDetailView({
                   </div>
                   <div className="flex-1 rounded-lg border border-border bg-muted/50 dark:bg-muted/30 p-4 overflow-auto shadow-inner relative group min-h-0">
                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Badge
-                        variant="outline"
-                        className="text-[10px] bg-card/80 backdrop-blur-sm"
-                      >
+                      <Badge variant="outline" className="text-[10px] bg-card/80 backdrop-blur-sm">
                         JSON
                       </Badge>
                     </div>
                     <pre className="text-xs font-mono text-foreground/95 whitespace-pre overflow-x-auto leading-relaxed">
                       {(() => {
                         try {
-                          return formatJSON(
-                            JSON.parse(request.responseInfo.body)
-                          )
+                          return formatJSON(JSON.parse(request.responseInfo.body));
                         } catch {
-                          return request.responseInfo.body
+                          return request.responseInfo.body;
                         }
                       })()}
                     </pre>
@@ -311,9 +277,7 @@ export function RequestDetailView({
                     </div>
                     {sessionInfo && (
                       <div className="flex items-center gap-2 mt-1 text-[10px] text-muted-foreground">
-                        <span className="capitalize">
-                          {sessionInfo.clientType}
-                        </span>
+                        <span className="capitalize">{sessionInfo.clientType}</span>
                         {sessionInfo.projectID > 0 && (
                           <>
                             <span>·</span>
@@ -411,15 +375,12 @@ export function RequestDetailView({
                     {request.cacheWriteCount.toLocaleString()}
                   </dd>
                 </div>
-                {(request.cache5mWriteCount > 0 ||
-                  request.cache1hWriteCount > 0) && (
+                {(request.cache5mWriteCount > 0 || request.cache1hWriteCount > 0) && (
                   <div className="flex justify-between items-center border-b border-border/30 pb-2 pl-4">
                     <dt className="text-xs font-medium text-muted-foreground/70 tracking-wider">
-                      <span className="text-cyan-400/80">5m:</span>{' '}
-                      {request.cache5mWriteCount}
+                      <span className="text-cyan-400/80">5m:</span> {request.cache5mWriteCount}
                       <span className="mx-2">|</span>
-                      <span className="text-orange-400/80">1h:</span>{' '}
-                      {request.cache1hWriteCount}
+                      <span className="text-orange-400/80">1h:</span> {request.cache1hWriteCount}
                     </dt>
                   </div>
                 )}
@@ -437,5 +398,5 @@ export function RequestDetailView({
         </div>
       </TabsContent>
     </Tabs>
-  )
+  );
 }

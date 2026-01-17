@@ -66,11 +66,7 @@ export type {
   UsageStatsFilter,
 } from './types';
 
-export type {
-  Transport,
-  TransportType,
-  TransportConfig,
-} from './interface';
+export type { Transport, TransportType, TransportConfig } from './interface';
 
 // 实现导出
 export { HttpTransport } from './http-transport';
@@ -87,8 +83,4 @@ export {
 } from './factory';
 
 // React Context 导出
-export {
-  TransportProvider,
-  useTransport,
-  useTransportType,
-} from './context';
+export { TransportProvider, useTransport, useTransportType } from './context';

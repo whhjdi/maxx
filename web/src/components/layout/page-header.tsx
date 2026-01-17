@@ -1,13 +1,13 @@
-import type { LucideIcon } from 'lucide-react'
-import type { ReactNode } from 'react'
+import type { LucideIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 interface PageHeaderProps {
-  icon?: LucideIcon
-  iconClassName?: string
-  title: string
-  description?: string
-  actions?: ReactNode
-  children?: ReactNode
+  icon?: LucideIcon;
+  iconClassName?: string;
+  title: string;
+  description?: string;
+  actions?: ReactNode;
+  children?: ReactNode;
 }
 
 export function PageHeader({
@@ -27,12 +27,8 @@ export function PageHeader({
           </div>
         )}
         <div>
-          <h1 className="text-lg font-semibold text-foreground leading-tight">
-            {title}
-          </h1>
-          {description && (
-            <p className="text-xs text-muted-foreground">{description}</p>
-          )}
+          <h1 className="text-lg font-semibold text-foreground leading-tight">{title}</h1>
+          {description && <p className="text-xs text-muted-foreground">{description}</p>}
         </div>
       </div>
       {(actions || children) && (
@@ -42,5 +38,5 @@ export function PageHeader({
         </div>
       )}
     </header>
-  )
+  );
 }
