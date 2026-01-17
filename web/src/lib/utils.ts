@@ -16,11 +16,11 @@ export function cn(...inputs: ClassValue[]) {
  */
 export function formatDuration(ns: number): string {
   // Convert nanoseconds to milliseconds
-  const ms = ns / 1_000_000
-  if (ms < 1000) return `${ms.toFixed(0)}ms`
-  const seconds = ms / 1000
-  if (seconds < 60) return `${seconds.toFixed(2)}s`
-  const minutes = Math.floor(seconds / 60)
-  const remainingSeconds = Math.floor(seconds % 60)
-  return `${minutes}m ${remainingSeconds}s`
+  const ms = ns / 1_000_000;
+  if (ms < 1000) return `${ms.toFixed(0)}ms`;
+  const seconds = ms / 1000;
+  if (seconds < 60) return `${seconds.toFixed(2)}s`;
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes}m ${remainingSeconds}s`;
 }

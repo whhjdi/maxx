@@ -1,44 +1,40 @@
-import { Button, Badge } from '@/components/ui'
-import { ArrowLeft } from 'lucide-react'
-import { statusVariant } from '../index'
-import type { ProxyRequest, ClientType } from '@/lib/transport'
-import {
-  ClientIcon,
-  getClientName,
-  getClientColor,
-} from '@/components/icons/client-icons'
-import { formatDuration } from '@/lib/utils'
+import { Button, Badge } from '@/components/ui';
+import { ArrowLeft } from 'lucide-react';
+import { statusVariant } from '../index';
+import type { ProxyRequest, ClientType } from '@/lib/transport';
+import { ClientIcon, getClientName, getClientColor } from '@/components/icons/client-icons';
+import { formatDuration } from '@/lib/utils';
 
 // 微美元转美元 (1 USD = 1,000,000 microUSD)
-const MICRO_USD_PER_USD = 1_000_000
+const MICRO_USD_PER_USD = 1_000_000;
 function microToUSD(microUSD: number): number {
-  return microUSD / MICRO_USD_PER_USD
+  return microUSD / MICRO_USD_PER_USD;
 }
 
 function formatCost(microUSD: number): string {
-  if (microUSD === 0) return '-'
-  const usd = microToUSD(microUSD)
-  if (usd < 0.0001) return '<$0.0001'
-  if (usd < 0.001) return `$${usd.toFixed(5)}`
-  if (usd < 0.01) return `$${usd.toFixed(4)}`
-  if (usd < 1) return `$${usd.toFixed(3)}`
-  return `$${usd.toFixed(2)}`
+  if (microUSD === 0) return '-';
+  const usd = microToUSD(microUSD);
+  if (usd < 0.0001) return '<$0.0001';
+  if (usd < 0.001) return `$${usd.toFixed(5)}`;
+  if (usd < 0.01) return `$${usd.toFixed(4)}`;
+  if (usd < 1) return `$${usd.toFixed(3)}`;
+  return `$${usd.toFixed(2)}`;
 }
 
 function formatTime(timestamp: string): string {
-  const date = new Date(timestamp)
+  const date = new Date(timestamp);
   return date.toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
-  })
+  });
 }
 
 interface RequestHeaderProps {
-  request: ProxyRequest
-  onBack: () => void
+  request: ProxyRequest;
+  onBack: () => void;
 }
 
 export function RequestHeader({ request, onBack }: RequestHeaderProps) {
@@ -70,32 +66,23 @@ export function RequestHeader({ request, onBack }: RequestHeaderProps) {
               <h2 className="text-lg font-semibold text-foreground tracking-tight leading-none">
                 {request.requestModel || 'Unknown Model'}
               </h2>
-              <Badge
-                variant={statusVariant[request.status]}
-                className="capitalize"
-              >
+              <Badge variant={statusVariant[request.status]} className="capitalize">
                 {request.status.toLowerCase().replace('_', ' ')}
               </Badge>
             </div>
             <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground leading-none">
-              <span className="font-mono bg-muted px-1.5 py-0.5 rounded">
-                #{request.id}
-              </span>
+              <span className="font-mono bg-muted px-1.5 py-0.5 rounded">#{request.id}</span>
               <span>{getClientName(request.clientType as ClientType)}</span>
               <span>·</span>
               <span>{formatTime(request.startTime)}</span>
-              {request.responseModel &&
-                request.responseModel !== request.requestModel && (
-                  <>
-                    <span>·</span>
-                    <span className="text-muted-foreground">
-                      Response:{' '}
-                      <span className="text-foreground">
-                        {request.responseModel}
-                      </span>
-                    </span>
-                  </>
-                )}
+              {request.responseModel && request.responseModel !== request.requestModel && (
+                <>
+                  <span>·</span>
+                  <span className="text-muted-foreground">
+                    Response: <span className="text-foreground">{request.responseModel}</span>
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -116,9 +103,7 @@ export function RequestHeader({ request, onBack }: RequestHeaderProps) {
               Input
             </div>
             <div className="text-sm font-mono font-medium text-muted-foreground">
-              {request.inputTokenCount > 0
-                ? request.inputTokenCount.toLocaleString()
-                : '-'}
+              {request.inputTokenCount > 0 ? request.inputTokenCount.toLocaleString() : '-'}
             </div>
           </div>
           <div className="w-px h-8 bg-border" />
@@ -127,9 +112,7 @@ export function RequestHeader({ request, onBack }: RequestHeaderProps) {
               Output
             </div>
             <div className="text-sm font-mono font-medium text-foreground">
-              {request.outputTokenCount > 0
-                ? request.outputTokenCount.toLocaleString()
-                : '-'}
+              {request.outputTokenCount > 0 ? request.outputTokenCount.toLocaleString() : '-'}
             </div>
           </div>
           <div className="w-px h-8 bg-border" />
@@ -138,9 +121,7 @@ export function RequestHeader({ request, onBack }: RequestHeaderProps) {
               Cache Read
             </div>
             <div className="text-sm font-mono font-medium text-violet-400">
-              {request.cacheReadCount > 0
-                ? request.cacheReadCount.toLocaleString()
-                : '-'}
+              {request.cacheReadCount > 0 ? request.cacheReadCount.toLocaleString() : '-'}
             </div>
           </div>
           <div className="w-px h-8 bg-border" />
@@ -149,9 +130,7 @@ export function RequestHeader({ request, onBack }: RequestHeaderProps) {
               Cache Write
             </div>
             <div className="text-sm font-mono font-medium text-amber-400">
-              {request.cacheWriteCount > 0
-                ? request.cacheWriteCount.toLocaleString()
-                : '-'}
+              {request.cacheWriteCount > 0 ? request.cacheWriteCount.toLocaleString() : '-'}
             </div>
           </div>
           <div className="w-px h-8 bg-border" />
@@ -166,5 +145,5 @@ export function RequestHeader({ request, onBack }: RequestHeaderProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

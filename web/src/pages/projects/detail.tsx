@@ -1,17 +1,7 @@
-import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import {
-  Button,
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from '@/components/ui'
-import {
-  useProjectBySlug,
-  useDeleteProject,
-  projectKeys,
-} from '@/hooks/queries'
+import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Button, Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui';
+import { useProjectBySlug, useDeleteProject, projectKeys } from '@/hooks/queries';
 import {
   ArrowLeft,
   Trash2,
@@ -21,41 +11,41 @@ import {
   Route,
   Users,
   FileText,
-} from 'lucide-react'
-import { useQueryClient } from '@tanstack/react-query'
-import { OverviewTab } from './tabs/overview'
-import { RoutesTab } from './tabs/routes'
-import { SessionsTab } from './tabs/sessions'
-import { RequestsTab } from './tabs/requests'
+} from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { OverviewTab } from './tabs/overview';
+import { RoutesTab } from './tabs/routes';
+import { SessionsTab } from './tabs/sessions';
+import { RequestsTab } from './tabs/requests';
 
-type TabId = 'overview' | 'routes' | 'sessions' | 'requests'
+type TabId = 'overview' | 'routes' | 'sessions' | 'requests';
 
 export function ProjectDetailPage() {
-  const { slug } = useParams<{ slug: string }>()
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const { data: project, isLoading, error } = useProjectBySlug(slug ?? '')
-  const deleteProject = useDeleteProject()
-  const [activeTab, setActiveTab] = useState<TabId>('overview')
+  const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { data: project, isLoading, error } = useProjectBySlug(slug ?? '');
+  const deleteProject = useDeleteProject();
+  const [activeTab, setActiveTab] = useState<TabId>('overview');
 
   const handleDelete = () => {
-    if (!project) return
+    if (!project) return;
     if (confirm(`Are you sure you want to delete project "${project.name}"?`)) {
       deleteProject.mutate(project.id, {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: projectKeys.lists() })
-          navigate('/projects')
+          queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+          navigate('/projects');
         },
-      })
+      });
     }
-  }
+  };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
         <Loader2 className="h-8 w-8 animate-spin text-accent" />
       </div>
-    )
+    );
   }
 
   if (error || !project) {
@@ -67,7 +57,7 @@ export function ProjectDetailPage() {
           Back to Projects
         </Button>
       </div>
-    )
+    );
   }
 
   return (
@@ -91,9 +81,7 @@ export function ProjectDetailPage() {
               <h2 className="text-lg font-semibold text-foreground leading-tight">
                 {project.name}
               </h2>
-              <p className="text-xs text-muted-foreground font-mono mt-0.5">
-                {project.slug}
-              </p>
+              <p className="text-xs text-muted-foreground font-mono mt-0.5">{project.slug}</p>
             </div>
           </div>
         </div>
@@ -170,5 +158,5 @@ export function ProjectDetailPage() {
         </div>
       </Tabs>
     </div>
-  )
+  );
 }

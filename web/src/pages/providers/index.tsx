@@ -1,28 +1,28 @@
-import { useState, useMemo, useRef } from 'react'
-import { Plus, Layers, Download, Upload } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
-import { useProviders, useAllProviderStats } from '@/hooks/queries'
-import { useStreamingRequests } from '@/hooks/use-streaming'
-import type { Provider, ImportResult } from '@/lib/transport'
-import { getTransport } from '@/lib/transport'
-import { ProviderRow } from './components/provider-row'
-import { ProviderCreateFlow } from './components/provider-create-flow'
-import { ProviderEditFlow } from './components/provider-edit-flow'
-import { useQueryClient } from '@tanstack/react-query'
-import { Button } from '@/components/ui/button'
-import { PageHeader } from '@/components/layout/page-header'
-import { PROVIDER_TYPE_CONFIGS, type ProviderTypeKey } from './types'
+import { useState, useMemo, useRef } from 'react';
+import { Plus, Layers, Download, Upload } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useProviders, useAllProviderStats } from '@/hooks/queries';
+import { useStreamingRequests } from '@/hooks/use-streaming';
+import type { Provider, ImportResult } from '@/lib/transport';
+import { getTransport } from '@/lib/transport';
+import { ProviderRow } from './components/provider-row';
+import { ProviderCreateFlow } from './components/provider-create-flow';
+import { ProviderEditFlow } from './components/provider-edit-flow';
+import { useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/layout/page-header';
+import { PROVIDER_TYPE_CONFIGS, type ProviderTypeKey } from './types';
 
 export function ProvidersPage() {
-  const { t } = useTranslation()
-  const { data: providers, isLoading } = useProviders()
-  const { data: providerStats = {} } = useAllProviderStats()
-  const { countsByProvider } = useStreamingRequests()
-  const [showCreateFlow, setShowCreateFlow] = useState(false)
-  const [editingProvider, setEditingProvider] = useState<Provider | null>(null)
-  const [importStatus, setImportStatus] = useState<ImportResult | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const queryClient = useQueryClient()
+  const { t } = useTranslation();
+  const { data: providers, isLoading } = useProviders();
+  const { data: providerStats = {} } = useAllProviderStats();
+  const { countsByProvider } = useStreamingRequests();
+  const [showCreateFlow, setShowCreateFlow] = useState(false);
+  const [editingProvider, setEditingProvider] = useState<Provider | null>(null);
+  const [importStatus, setImportStatus] = useState<ImportResult | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
 
   const groupedProviders = useMemo(() => {
     // 按类型分组，使用配置系统中定义的类型
@@ -30,85 +30,80 @@ export function ProvidersPage() {
       antigravity: [],
       kiro: [],
       custom: [],
-    }
+    };
 
-    providers?.forEach(p => {
-      const type = p.type as ProviderTypeKey
+    providers?.forEach((p) => {
+      const type = p.type as ProviderTypeKey;
       if (groups[type]) {
-        groups[type].push(p)
+        groups[type].push(p);
       } else {
         // 未知类型归入 custom
-        groups.custom.push(p)
+        groups.custom.push(p);
       }
-    })
+    });
 
-    return groups
-  }, [providers])
+    return groups;
+  }, [providers]);
 
   // Export providers as JSON file
   const handleExport = async () => {
     try {
-      const transport = getTransport()
-      const data = await transport.exportProviders()
+      const transport = getTransport();
+      const data = await transport.exportProviders();
       const blob = new Blob([JSON.stringify(data, null, 2)], {
         type: 'application/json',
-      })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `providers-${new Date().toISOString().split('T')[0]}.json`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `providers-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Export failed:', error)
+      console.error('Export failed:', error);
     }
-  }
+  };
 
   // Import providers from JSON file
   const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
+    const file = event.target.files?.[0];
+    if (!file) return;
 
     try {
-      const text = await file.text()
-      const data = JSON.parse(text) as Provider[]
-      const transport = getTransport()
-      const result = await transport.importProviders(data)
-      setImportStatus(result)
-      queryClient.invalidateQueries({ queryKey: ['providers'] })
-      queryClient.invalidateQueries({ queryKey: ['routes'] })
+      const text = await file.text();
+      const data = JSON.parse(text) as Provider[];
+      const transport = getTransport();
+      const result = await transport.importProviders(data);
+      setImportStatus(result);
+      queryClient.invalidateQueries({ queryKey: ['providers'] });
+      queryClient.invalidateQueries({ queryKey: ['routes'] });
       // Clear file input
       if (fileInputRef.current) {
-        fileInputRef.current.value = ''
+        fileInputRef.current.value = '';
       }
       // Auto-hide status after 5 seconds
-      setTimeout(() => setImportStatus(null), 5000)
+      setTimeout(() => setImportStatus(null), 5000);
     } catch (error) {
-      console.error('Import failed:', error)
+      console.error('Import failed:', error);
       setImportStatus({
         imported: 0,
         skipped: 0,
         errors: [`Import failed: ${error}`],
-      })
-      setTimeout(() => setImportStatus(null), 5000)
+      });
+      setTimeout(() => setImportStatus(null), 5000);
     }
-  }
+  };
 
   // Show edit flow
   if (editingProvider) {
-    return (
-      <ProviderEditFlow
-        provider={editingProvider}
-        onClose={() => setEditingProvider(null)}
-      />
-    )
+    return <ProviderEditFlow provider={editingProvider} onClose={() => setEditingProvider(null)} />;
   }
 
   // Show create flow
   if (showCreateFlow) {
-    return <ProviderCreateFlow onClose={() => setShowCreateFlow(false)} />
+    return <ProviderCreateFlow onClose={() => setShowCreateFlow(false)} />;
   }
 
   // Provider list
@@ -118,7 +113,9 @@ export function ProvidersPage() {
         icon={Layers}
         iconClassName="text-blue-500"
         title={t('providers.title')}
-        description={t('providers.description', { count: providers?.length || 0 })}
+        description={t('providers.description', {
+          count: providers?.length || 0,
+        })}
       >
         <input
           type="file"
@@ -162,9 +159,7 @@ export function ProvidersPage() {
             <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
               <Layers size={48} className="mb-4 opacity-50" />
               <p className="text-body">{t('providers.noProviders')}</p>
-              <p className="text-caption mt-2">
-                {t('providers.noProvidersHint')}
-              </p>
+              <p className="text-caption mt-2">{t('providers.noProvidersHint')}</p>
               <Button
                 onClick={() => setShowCreateFlow(true)}
                 className=" mt-6 flex items-center gap-2"
@@ -176,40 +171,36 @@ export function ProvidersPage() {
           ) : (
             <div className="space-y-8">
               {/* 动态渲染各类型分组 */}
-              {(Object.keys(PROVIDER_TYPE_CONFIGS) as ProviderTypeKey[]).map(
-                typeKey => {
-                  const typeProviders = groupedProviders[typeKey]
-                  if (typeProviders.length === 0) return null
+              {(Object.keys(PROVIDER_TYPE_CONFIGS) as ProviderTypeKey[]).map((typeKey) => {
+                const typeProviders = groupedProviders[typeKey];
+                if (typeProviders.length === 0) return null;
 
-                  const config = PROVIDER_TYPE_CONFIGS[typeKey]
-                  const TypeIcon = config.icon
+                const config = PROVIDER_TYPE_CONFIGS[typeKey];
+                const TypeIcon = config.icon;
 
-                  return (
-                    <section key={typeKey} className="space-y-3">
-                      <div className="flex items-center gap-2 px-1">
-                        <TypeIcon size={16} style={{ color: config.color }} />
-                        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                          {config.label}
-                        </h3>
-                        <div className="h-px flex-1 bg-border/50 ml-2" />
-                      </div>
-                      <div className="space-y-3">
-                        {typeProviders.map(provider => (
-                          <ProviderRow
-                            key={provider.id}
-                            provider={provider}
-                            stats={providerStats[provider.id]}
-                            streamingCount={
-                              countsByProvider.get(provider.id) || 0
-                            }
-                            onClick={() => setEditingProvider(provider)}
-                          />
-                        ))}
-                      </div>
-                    </section>
-                  )
-                }
-              )}
+                return (
+                  <section key={typeKey} className="space-y-3">
+                    <div className="flex items-center gap-2 px-1">
+                      <TypeIcon size={16} style={{ color: config.color }} />
+                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                        {config.label}
+                      </h3>
+                      <div className="h-px flex-1 bg-border/50 ml-2" />
+                    </div>
+                    <div className="space-y-3">
+                      {typeProviders.map((provider) => (
+                        <ProviderRow
+                          key={provider.id}
+                          provider={provider}
+                          stats={providerStats[provider.id]}
+                          streamingCount={countsByProvider.get(provider.id) || 0}
+                          onClick={() => setEditingProvider(provider)}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
             </div>
           )}
         </div>
@@ -220,7 +211,10 @@ export function ProvidersPage() {
         <div className="fixed bottom-6 right-6 bg-card border border-border rounded-lg shadow-lg p-4">
           <div className="space-y-2">
             <div className="text-sm font-medium text-text-primary">
-              {t('providers.importCompleted', { imported: importStatus.imported, skipped: importStatus.skipped })}
+              {t('providers.importCompleted', {
+                imported: importStatus.imported,
+                skipped: importStatus.skipped,
+              })}
             </div>
             {importStatus.errors.length > 0 && (
               <div className="text-xs text-red-400 space-y-1">
@@ -233,5 +227,5 @@ export function ProvidersPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

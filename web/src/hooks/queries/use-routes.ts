@@ -77,9 +77,9 @@ export function useToggleRoute() {
     mutationFn: (id: number) => {
       const transport = getTransport();
       // 先获取当前状态，然后切换
-      return transport.getRoute(id).then((route) =>
-        transport.updateRoute(id, { isEnabled: !route.isEnabled })
-      );
+      return transport
+        .getRoute(id)
+        .then((route) => transport.updateRoute(id, { isEnabled: !route.isEnabled }));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: routeKeys.lists() });

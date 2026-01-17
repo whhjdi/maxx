@@ -3,7 +3,11 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getTransport, type RoutingStrategy, type CreateRoutingStrategyData } from '@/lib/transport';
+import {
+  getTransport,
+  type RoutingStrategy,
+  type CreateRoutingStrategyData,
+} from '@/lib/transport';
 
 // Query Keys
 export const routingStrategyKeys = {
@@ -51,7 +55,9 @@ export function useUpdateRoutingStrategy() {
     mutationFn: ({ id, data }: { id: number; data: Partial<RoutingStrategy> }) =>
       getTransport().updateRoutingStrategy(id, data),
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: routingStrategyKeys.detail(id) });
+      queryClient.invalidateQueries({
+        queryKey: routingStrategyKeys.detail(id),
+      });
       queryClient.invalidateQueries({ queryKey: routingStrategyKeys.lists() });
     },
   });

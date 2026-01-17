@@ -1,4 +1,13 @@
-import { Card, CardContent, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui';
+import {
+  Card,
+  CardContent,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui';
 import { useSessions } from '@/hooks/queries';
 import type { Project } from '@/lib/transport';
 import { Loader2, Users } from 'lucide-react';
@@ -27,9 +36,7 @@ export function SessionsTab({ project }: SessionsTabProps) {
     <div className="p-6 space-y-6">
       <div>
         <h3 className="text-lg font-medium text-text-primary">{t('sessions.projectSessions')}</h3>
-        <p className="text-sm text-text-secondary">
-          {t('sessions.description')}
-        </p>
+        <p className="text-sm text-text-secondary">{t('sessions.description')}</p>
       </div>
 
       <Card className="border-border bg-card">
@@ -46,11 +53,11 @@ export function SessionsTab({ project }: SessionsTabProps) {
             <TableBody>
               {projectSessions.map((session) => (
                 <TableRow key={session.id} className="border-border hover:bg-accent">
-                  <TableCell className="font-mono text-xs text-muted-foreground">{session.id}</TableCell>
+                  <TableCell className="font-mono text-xs text-muted-foreground">
+                    {session.id}
+                  </TableCell>
                   <TableCell>
-                    <code className="text-xs bg-muted px-2 py-1 rounded">
-                      {session.sessionID}
-                    </code>
+                    <code className="text-xs bg-muted px-2 py-1 rounded">{session.sessionID}</code>
                   </TableCell>
                   <TableCell>
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-accent/10 text-accent">
@@ -64,7 +71,10 @@ export function SessionsTab({ project }: SessionsTabProps) {
               ))}
               {projectSessions.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-32 text-center text-muted-foreground border-border">
+                  <TableCell
+                    colSpan={4}
+                    className="h-32 text-center text-muted-foreground border-border"
+                  >
                     <div className="flex flex-col items-center justify-center gap-2">
                       <Users className="h-8 w-8 opacity-20" />
                       <p>No sessions for this project</p>

@@ -1,7 +1,7 @@
 export { AppLayout } from './app-layout';
-export { SidebarNav } from './sidebar-nav';
+export { SidebarNav } from './app-sidebar';
 export { PageHeader } from './page-header';
-export { NavMain } from './nav-main';
-export { NavRoutes } from './nav-routes';
-export { NavManagement } from './nav-management';
 export { NavProxyStatus } from './nav-proxy-status';
+export { SidebarRenderer } from './app-sidebar/sidebar-renderer';
+export { RequestsNavItem } from './app-sidebar/requests-nav-item';
+export { ClientRoutesItems } from './app-sidebar/client-routes-items';

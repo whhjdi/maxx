@@ -1,9 +1,22 @@
-import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
-import type { DragEndEvent } from '@dnd-kit/core'
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import type { DragEndEvent } from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import {
   Button,
   Card,
@@ -13,9 +26,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui'
-import { ModelInput } from '@/components/ui/model-input'
-import { PageHeader } from '@/components/layout/page-header'
+} from '@/components/ui';
+import { ModelInput } from '@/components/ui/model-input';
+import { PageHeader } from '@/components/layout/page-header';
 import {
   useModelMappings,
   useCreateModelMapping,
@@ -23,34 +36,36 @@ import {
   useDeleteModelMapping,
   useClearAllModelMappings,
   useResetModelMappingsToDefaults,
-} from '@/hooks/queries'
-import type { ModelMapping, ModelMappingInput } from '@/lib/transport/types'
-import { Zap, Plus, Trash2, ArrowRight, RotateCcw, GripVertical } from 'lucide-react'
+} from '@/hooks/queries';
+import type { ModelMapping, ModelMappingInput } from '@/lib/transport/types';
+import { Zap, Plus, Trash2, ArrowRight, RotateCcw, GripVertical } from 'lucide-react';
 
 interface SortableRuleItemProps {
-  id: string
-  index: number
-  rule: ModelMapping
-  onRemove: () => void
-  onUpdate: (data: Partial<ModelMappingInput>) => void
-  disabled: boolean
+  id: string;
+  index: number;
+  rule: ModelMapping;
+  onRemove: () => void;
+  onUpdate: (data: Partial<ModelMappingInput>) => void;
+  disabled: boolean;
 }
 
-function SortableRuleItem({ id, index, rule, onRemove, onUpdate, disabled }: SortableRuleItemProps) {
-  const { t } = useTranslation()
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id })
+function SortableRuleItem({
+  id,
+  index,
+  rule,
+  onRemove,
+  onUpdate,
+  disabled,
+}: SortableRuleItemProps) {
+  const { t } = useTranslation();
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-  }
+  };
 
   return (
     <div
@@ -71,7 +86,7 @@ function SortableRuleItem({ id, index, rule, onRemove, onUpdate, disabled }: Sor
       {/* Pattern -> Target */}
       <ModelInput
         value={rule.pattern}
-        onChange={pattern => onUpdate({ pattern })}
+        onChange={(pattern) => onUpdate({ pattern })}
         placeholder={t('modelMappings.matchPattern')}
         disabled={disabled}
         className="flex-1 min-w-0 h-7 text-xs"
@@ -79,7 +94,7 @@ function SortableRuleItem({ id, index, rule, onRemove, onUpdate, disabled }: Sor
       <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />
       <ModelInput
         value={rule.target}
-        onChange={target => onUpdate({ target })}
+        onChange={(target) => onUpdate({ target })}
         placeholder={t('modelMappings.targetModel')}
         disabled={disabled}
         className="flex-1 min-w-0 h-7 text-xs"
@@ -105,52 +120,46 @@ function SortableRuleItem({ id, index, rule, onRemove, onUpdate, disabled }: Sor
         {rule.projectID || '-'}
       </span>
 
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onRemove}
-        disabled={disabled}
-        className="shrink-0"
-      >
+      <Button variant="ghost" size="sm" onClick={onRemove} disabled={disabled} className="shrink-0">
         <Trash2 className="h-4 w-4 text-destructive" />
       </Button>
     </div>
-  )
+  );
 }
 
 export function ModelMappingsPage() {
-  const { t } = useTranslation()
-  const { data: mappings, isLoading } = useModelMappings()
-  const createMapping = useCreateModelMapping()
-  const updateMapping = useUpdateModelMapping()
-  const deleteMapping = useDeleteModelMapping()
-  const clearAllMappings = useClearAllModelMappings()
-  const resetToDefaults = useResetModelMappingsToDefaults()
-  const [newPattern, setNewPattern] = useState('')
-  const [newTarget, setNewTarget] = useState('')
-  const [newClientType, setNewClientType] = useState('claude')
-  const [newProviderType, setNewProviderType] = useState('antigravity')
+  const { t } = useTranslation();
+  const { data: mappings, isLoading } = useModelMappings();
+  const createMapping = useCreateModelMapping();
+  const updateMapping = useUpdateModelMapping();
+  const deleteMapping = useDeleteModelMapping();
+  const clearAllMappings = useClearAllModelMappings();
+  const resetToDefaults = useResetModelMappingsToDefaults();
+  const [newPattern, setNewPattern] = useState('');
+  const [newTarget, setNewTarget] = useState('');
+  const [newClientType, setNewClientType] = useState('claude');
+  const [newProviderType, setNewProviderType] = useState('antigravity');
 
-  const rules = mappings || []
+  const rules = mappings || [];
 
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
-  )
+    }),
+  );
 
   const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event
-    if (!over || active.id === over.id) return
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
 
-    const oldIndex = rules.findIndex(r => `rule-${r.id}` === active.id)
-    const newIndex = rules.findIndex(r => `rule-${r.id}` === over.id)
+    const oldIndex = rules.findIndex((r) => `rule-${r.id}` === active.id);
+    const newIndex = rules.findIndex((r) => `rule-${r.id}` === over.id);
 
     if (oldIndex !== -1 && newIndex !== -1) {
-      const reordered = arrayMove(rules, oldIndex, newIndex)
+      const reordered = arrayMove(rules, oldIndex, newIndex);
       for (let i = 0; i < reordered.length; i++) {
-        const rule = reordered[i]
+        const rule = reordered[i];
         if (rule.priority !== i * 10) {
           await updateMapping.mutateAsync({
             id: rule.id,
@@ -160,14 +169,14 @@ export function ModelMappingsPage() {
               priority: i * 10,
               isEnabled: rule.isEnabled,
             },
-          })
+          });
         }
       }
     }
-  }
+  };
 
   const handleAddRule = async () => {
-    if (!newPattern.trim() || !newTarget.trim()) return
+    if (!newPattern.trim() || !newTarget.trim()) return;
 
     await createMapping.mutateAsync({
       pattern: newPattern.trim(),
@@ -176,16 +185,16 @@ export function ModelMappingsPage() {
       providerType: newProviderType,
       priority: rules.length * 10 + 1000,
       isEnabled: true,
-    })
-    setNewPattern('')
-    setNewTarget('')
-    setNewClientType('claude')
-    setNewProviderType('antigravity')
-  }
+    });
+    setNewPattern('');
+    setNewTarget('');
+    setNewClientType('claude');
+    setNewProviderType('antigravity');
+  };
 
   const handleRemoveRule = async (id: number) => {
-    await deleteMapping.mutateAsync(id)
-  }
+    await deleteMapping.mutateAsync(id);
+  };
 
   const handleUpdateRule = async (rule: ModelMapping, data: Partial<ModelMappingInput>) => {
     await updateMapping.mutateAsync({
@@ -200,22 +209,27 @@ export function ModelMappingsPage() {
         priority: rule.priority,
         isEnabled: rule.isEnabled,
       },
-    })
-  }
+    });
+  };
 
   const handleReset = async () => {
-    if (!window.confirm(t('modelMappings.confirmReset'))) return
-    await resetToDefaults.mutateAsync()
-  }
+    if (!window.confirm(t('modelMappings.confirmReset'))) return;
+    await resetToDefaults.mutateAsync();
+  };
 
   const handleClearAll = async () => {
-    if (!window.confirm(t('modelMappings.confirmClearAll'))) return
-    await clearAllMappings.mutateAsync()
-  }
+    if (!window.confirm(t('modelMappings.confirmClearAll'))) return;
+    await clearAllMappings.mutateAsync();
+  };
 
-  if (isLoading) return null
+  if (isLoading) return null;
 
-  const isPending = createMapping.isPending || updateMapping.isPending || deleteMapping.isPending || resetToDefaults.isPending || clearAllMappings.isPending
+  const isPending =
+    createMapping.isPending ||
+    updateMapping.isPending ||
+    deleteMapping.isPending ||
+    resetToDefaults.isPending ||
+    clearAllMappings.isPending;
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -226,12 +240,7 @@ export function ModelMappingsPage() {
         description={t('modelMappings.description', { count: rules.length })}
         actions={
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleReset}
-              disabled={isPending}
-            >
+            <Button variant="outline" size="sm" onClick={handleReset} disabled={isPending}>
               <RotateCcw className="h-4 w-4 mr-1" />
               {t('modelMappings.resetToPreset')}
             </Button>
@@ -251,9 +260,7 @@ export function ModelMappingsPage() {
       <div className="flex-1 overflow-y-auto p-6">
         <Card className="border-border bg-card">
           <CardContent className="p-6 space-y-4">
-            <p className="text-xs text-muted-foreground">
-              {t('modelMappings.pageDesc')}
-            </p>
+            <p className="text-xs text-muted-foreground">{t('modelMappings.pageDesc')}</p>
 
             {/* Header row */}
             <div className="flex items-center gap-3 text-xs text-muted-foreground font-medium border-b pb-2">
@@ -276,7 +283,7 @@ export function ModelMappingsPage() {
                 onDragEnd={handleDragEnd}
               >
                 <SortableContext
-                  items={rules.map(r => `rule-${r.id}`)}
+                  items={rules.map((r) => `rule-${r.id}`)}
                   strategy={verticalListSortingStrategy}
                 >
                   <div className="space-y-0">
@@ -299,7 +306,9 @@ export function ModelMappingsPage() {
             {rules.length === 0 && (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">{t('modelMappings.noMappings')}</p>
-                <p className="text-xs text-muted-foreground mt-1">{t('modelMappings.noMappingsHint')}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t('modelMappings.noMappingsHint')}
+                </p>
               </div>
             )}
 
@@ -321,7 +330,7 @@ export function ModelMappingsPage() {
               />
               <Select
                 value={newClientType || '_all'}
-                onValueChange={v => setNewClientType(v === '_all' ? '' : v ?? '')}
+                onValueChange={(v) => setNewClientType(v === '_all' ? '' : (v ?? ''))}
                 disabled={isPending}
               >
                 <SelectTrigger className="w-[100px] h-8 text-xs shrink-0">
@@ -337,7 +346,7 @@ export function ModelMappingsPage() {
               </Select>
               <Select
                 value={newProviderType || '_all'}
-                onValueChange={v => setNewProviderType(v === '_all' ? '' : v ?? '')}
+                onValueChange={(v) => setNewProviderType(v === '_all' ? '' : (v ?? ''))}
                 disabled={isPending}
               >
                 <SelectTrigger className="w-[110px] h-8 text-xs shrink-0">
@@ -364,7 +373,7 @@ export function ModelMappingsPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }
 
-export default ModelMappingsPage
+export default ModelMappingsPage;

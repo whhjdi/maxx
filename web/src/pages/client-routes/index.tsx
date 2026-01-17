@@ -3,14 +3,14 @@
  * 全局路由配置页面 - 显示当前 ClientType 的路由
  */
 
-import { useParams } from 'react-router-dom'
-import { ClientIcon, getClientName } from '@/components/icons/client-icons'
-import type { ClientType } from '@/lib/transport'
-import { ClientTypeRoutesContent } from '@/components/routes/ClientTypeRoutesContent'
+import { useParams } from 'react-router-dom';
+import { ClientIcon, getClientName } from '@/components/icons/client-icons';
+import type { ClientType } from '@/lib/transport';
+import { ClientTypeRoutesContent } from '@/components/routes/ClientTypeRoutesContent';
 
 export function ClientRoutesPage() {
-  const { clientType } = useParams<{ clientType: string }>()
-  const activeClientType = (clientType as ClientType) || 'claude'
+  const { clientType } = useParams<{ clientType: string }>();
+  const activeClientType = (clientType as ClientType) || 'claude';
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -18,11 +18,7 @@ export function ClientRoutesPage() {
       <div className="h-[73px] flex items-center justify-between px-6 border-b border-border bg-card shrink-0">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-accent/10 rounded-lg">
-            <ClientIcon
-              type={activeClientType}
-              size={20}
-              className="text-accent"
-            />
+            <ClientIcon type={activeClientType} size={20} className="text-accent" />
           </div>
           <div>
             <h2 className="text-lg font-semibold text-foreground leading-tight">
@@ -40,5 +36,5 @@ export function ClientRoutesPage() {
         <ClientTypeRoutesContent clientType={activeClientType} projectID={0} />
       </div>
     </div>
-  )
+  );
 }

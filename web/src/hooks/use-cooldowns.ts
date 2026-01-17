@@ -51,7 +51,7 @@ export function useCooldowns() {
 
     return () => {
       // Clear all timeouts on cleanup
-      timeouts.forEach(timeout => clearTimeout(timeout));
+      timeouts.forEach((timeout) => clearTimeout(timeout));
     };
   }, [cooldowns, queryClient]);
 
@@ -60,7 +60,9 @@ export function useCooldowns() {
     return cooldowns.find(
       (cd: Cooldown) =>
         cd.providerID === providerId &&
-        (cd.clientType === '' || cd.clientType === 'all' || (clientType && cd.clientType === clientType))
+        (cd.clientType === '' ||
+          cd.clientType === 'all' ||
+          (clientType && cd.clientType === clientType)),
     );
   };
 
@@ -72,7 +74,8 @@ export function useCooldowns() {
   // Helper to get remaining time as seconds
   const getRemainingSeconds = (cooldown: Cooldown) => {
     // Handle both 'untilTime' and 'until' field names for backward compatibility
-    const untilTime = cooldown.untilTime || (cooldown as unknown as Record<string, unknown>).until as string;
+    const untilTime =
+      cooldown.untilTime || ((cooldown as unknown as Record<string, unknown>).until as string);
     if (!untilTime) return 0;
 
     const until = new Date(untilTime);

@@ -39,9 +39,7 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
       <div className="w-full max-w-sm space-y-6 p-6">
         <div className="space-y-2 text-center">
           <h1 className="text-2xl font-bold">{t('login.title')}</h1>
-          <p className="text-muted-foreground text-sm">
-            {t('login.description')}
-          </p>
+          <p className="text-muted-foreground text-sm">{t('login.description')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -54,16 +52,10 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
               autoFocus
               disabled={isLoading}
             />
-            {error && (
-              <p className="text-destructive text-sm">{error}</p>
-            )}
+            {error && <p className="text-destructive text-sm">{error}</p>}
           </div>
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isLoading || !password}
-          >
+          <Button type="submit" className="w-full" disabled={isLoading || !password}>
             {isLoading ? t('login.verifying') : t('login.submit')}
           </Button>
         </form>

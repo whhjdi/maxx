@@ -1,15 +1,15 @@
-import { useState } from 'react'
-import { Plus, Trash2, ArrowRight } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
-import { Button } from '@/components/ui/button'
-import { ModelInput } from '@/components/ui/model-input'
+import { useState } from 'react';
+import { Plus, Trash2, ArrowRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/button';
+import { ModelInput } from '@/components/ui/model-input';
 
 interface ModelMappingEditorProps {
-  value: Record<string, string>
-  onChange: (value: Record<string, string>) => void
-  disabled?: boolean
+  value: Record<string, string>;
+  onChange: (value: Record<string, string>) => void;
+  disabled?: boolean;
   /** Only show Antigravity-supported models for target selection */
-  targetOnlyAntigravity?: boolean
+  targetOnlyAntigravity?: boolean;
 }
 
 export function ModelMappingEditor({
@@ -18,41 +18,46 @@ export function ModelMappingEditor({
   disabled = false,
   targetOnlyAntigravity = false,
 }: ModelMappingEditorProps) {
-  const { t } = useTranslation()
-  const [newFrom, setNewFrom] = useState('')
-  const [newTo, setNewTo] = useState('')
+  const { t } = useTranslation();
+  const [newFrom, setNewFrom] = useState('');
+  const [newTo, setNewTo] = useState('');
 
-  const entries = Object.entries(value)
+  const entries = Object.entries(value);
 
   // Target model providers filter
-  const targetProviders = targetOnlyAntigravity ? ['Antigravity' as const] : undefined
+  const targetProviders = targetOnlyAntigravity ? ['Antigravity' as const] : undefined;
 
   const handleAdd = () => {
-    if (!newFrom.trim() || !newTo.trim()) return
-    if (value[newFrom.trim()]) return // Already exists
+    if (!newFrom.trim() || !newTo.trim()) return;
+    if (value[newFrom.trim()]) return; // Already exists
 
     onChange({
       ...value,
       [newFrom.trim()]: newTo.trim(),
-    })
-    setNewFrom('')
-    setNewTo('')
-  }
+    });
+    setNewFrom('');
+    setNewTo('');
+  };
 
   const handleRemove = (key: string) => {
-    const newValue = { ...value }
-    delete newValue[key]
-    onChange(newValue)
-  }
+    const newValue = { ...value };
+    delete newValue[key];
+    onChange(newValue);
+  };
 
   const handleUpdate = (oldKey: string, newKey: string, newVal: string) => {
-    const newValue = { ...value }
-    if (oldKey !== newKey) {
-      delete newValue[oldKey]
+    const normalizedKey = newKey.trim();
+    const normalizedVal = newVal.trim();
+    if (!normalizedKey || !normalizedVal) return;
+    if (oldKey !== normalizedKey && value[normalizedKey]) return; // prevent overwrite
+
+    const newValue = { ...value };
+    if (oldKey !== normalizedKey) {
+      delete newValue[oldKey];
     }
-    newValue[newKey] = newVal
-    onChange(newValue)
-  }
+    newValue[normalizedKey] = normalizedVal;
+    onChange(newValue);
+  };
 
   return (
     <div className="space-y-3">
@@ -62,7 +67,7 @@ export function ModelMappingEditor({
             <div key={from} className="flex items-center gap-2">
               <ModelInput
                 value={from}
-                onChange={newKey => handleUpdate(from, newKey, to)}
+                onChange={(newKey) => handleUpdate(from, newKey, to)}
                 placeholder={t('modelMapping.requestModel')}
                 className="flex-1"
                 disabled={disabled}
@@ -70,7 +75,7 @@ export function ModelMappingEditor({
               <ArrowRight size={16} className="text-muted-foreground shrink-0" />
               <ModelInput
                 value={to}
-                onChange={newVal => handleUpdate(from, from, newVal)}
+                onChange={(newVal) => handleUpdate(from, from, newVal)}
                 placeholder={t('modelMapping.mappedModel')}
                 className="flex-1"
                 disabled={disabled}
@@ -123,10 +128,10 @@ export function ModelMappingEditor({
 
       {entries.length === 0 && (
         <p className="text-xs text-muted-foreground">
-          No model mappings configured. Add mappings to transform request models
-          before sending to upstream.
+          No model mappings configured. Add mappings to transform request models before sending to
+          upstream.
         </p>
       )}
     </div>
-  )
+  );
 }

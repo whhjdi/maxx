@@ -1,11 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui'
-import { useTranslation } from 'react-i18next'
-import {
-  useProviders,
-  useRoutes,
-  useProjects,
-  useProxyRequests,
-} from '@/hooks/queries'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { useTranslation } from 'react-i18next';
+import { useProviders, useRoutes, useProjects, useProxyRequests } from '@/hooks/queries';
 import {
   Activity,
   Server,
@@ -17,18 +12,18 @@ import {
   XCircle,
   Ban,
   LayoutDashboard,
-} from 'lucide-react'
-import { Link } from 'react-router-dom'
-import { PageHeader } from '@/components/layout/page-header'
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { PageHeader } from '@/components/layout/page-header';
 
 export function OverviewPage() {
-  const { t } = useTranslation()
-  const { data: providers } = useProviders()
-  const { data: routes } = useRoutes()
-  const { data: projects } = useProjects()
-  const { data: requestsData } = useProxyRequests({ limit: 10 })
+  const { t } = useTranslation();
+  const { data: providers } = useProviders();
+  const { data: routes } = useRoutes();
+  const { data: projects } = useProjects();
+  const { data: requestsData } = useProxyRequests({ limit: 10 });
 
-  const requests = requestsData?.items ?? []
+  const requests = requestsData?.items ?? [];
 
   const stats = [
     {
@@ -59,16 +54,12 @@ export function OverviewPage() {
       className: 'text-emerald-600 dark:text-emerald-400 bg-muted',
       href: '/requests',
     },
-  ]
+  ];
 
-  const completedRequests = requests.filter(
-    r => r.status === 'COMPLETED'
-  ).length
-  const failedRequests = requests.filter(r => r.status === 'FAILED').length
-  const cancelledRequests = requests.filter(
-    r => r.status === 'CANCELLED'
-  ).length
-  const hasProviders = (providers?.length ?? 0) > 0
+  const completedRequests = requests.filter((r) => r.status === 'COMPLETED').length;
+  const failedRequests = requests.filter((r) => r.status === 'FAILED').length;
+  const cancelledRequests = requests.filter((r) => r.status === 'CANCELLED').length;
+  const hasProviders = (providers?.length ?? 0) > 0;
 
   return (
     <div className="flex flex-col h-full">
@@ -104,8 +95,8 @@ export function OverviewPage() {
 
           {/* Stats Grid */}
           <div className="grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4">
-            {stats.map(stat => {
-              const Icon = stat.icon
+            {stats.map((stat) => {
+              const Icon = stat.icon;
               return (
                 <Link key={stat.label} to={stat.href} className="group">
                   <Card className="h-full hover:shadow-lg hover:shadow-accent/5 cursor-pointer border-border/50 bg-card/50 backdrop-blur-sm transition-all duration-300 hover:border-accent/40 hover:-translate-y-1">
@@ -128,7 +119,7 @@ export function OverviewPage() {
                     </CardContent>
                   </Card>
                 </Link>
-              )
+              );
             })}
           </div>
 
@@ -252,9 +243,7 @@ export function OverviewPage() {
                 <h3 className="text-base font-semibold text-foreground mb-2">
                   {t('dashboard.secure')}
                 </h3>
-                <p className="text-sm text-muted-foreground">
-                  {t('dashboard.secureDesc')}
-                </p>
+                <p className="text-sm text-muted-foreground">{t('dashboard.secureDesc')}</p>
               </div>
               <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 md:p-8 text-center hover:bg-accent hover:border-border transition-all duration-300 group hover:-translate-y-1">
                 <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-muted flex items-center justify-center mx-auto mb-4 group-hover:bg-muted/80 transition-colors">
@@ -263,9 +252,7 @@ export function OverviewPage() {
                 <h3 className="text-base font-semibold text-foreground mb-2">
                   {t('dashboard.fast')}
                 </h3>
-                <p className="text-sm text-muted-foreground">
-                  {t('dashboard.fastDesc')}
-                </p>
+                <p className="text-sm text-muted-foreground">{t('dashboard.fastDesc')}</p>
               </div>
               <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 md:p-8 text-center hover:bg-accent hover:border-border transition-all duration-300 group hover:-translate-y-1">
                 <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-muted flex items-center justify-center mx-auto mb-4 group-hover:bg-muted/80 transition-colors">
@@ -274,14 +261,12 @@ export function OverviewPage() {
                 <h3 className="text-base font-semibold text-foreground mb-2">
                   {t('dashboard.insights')}
                 </h3>
-                <p className="text-sm text-muted-foreground">
-                  {t('dashboard.insightsDesc')}
-                </p>
+                <p className="text-sm text-muted-foreground">{t('dashboard.insightsDesc')}</p>
               </div>
             </div>
           )}
         </div>
       </div>
     </div>
-  )
+  );
 }

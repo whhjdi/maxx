@@ -1,10 +1,7 @@
-import { useEffect, useState, useCallback } from 'react'
-import { useTranslation } from 'react-i18next'
-import type { TFunction } from 'i18next'
-import {
-  Dialog,
-  DialogContent,
-} from '@/components/ui/dialog'
+import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
   Snowflake,
   Clock,
@@ -18,32 +15,38 @@ import {
   Thermometer,
   Calendar,
   Activity,
-} from 'lucide-react'
-import type { Cooldown } from '@/lib/transport/types'
-import { useCooldowns } from '@/hooks/use-cooldowns'
+} from 'lucide-react';
+import type { Cooldown } from '@/lib/transport/types';
+import { useCooldowns } from '@/hooks/use-cooldowns';
 
 interface CooldownDetailsDialogProps {
-  cooldown: Cooldown | null
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onClear: () => void
-  isClearing: boolean
-  onDisable: () => void
-  isDisabling: boolean
+  cooldown: Cooldown | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onClear: () => void;
+  isClearing: boolean;
+  onDisable: () => void;
+  isDisabling: boolean;
 }
 
 // Reason 信息和图标 - 使用翻译
 const getReasonInfo = (t: TFunction) => ({
   server_error: {
     label: t('provider.reasons.serverError'),
-    description: t('provider.reasons.serverErrorDesc', '上游服务器返回 5xx 错误，系统自动进入冷却保护'),
+    description: t(
+      'provider.reasons.serverErrorDesc',
+      '上游服务器返回 5xx 错误，系统自动进入冷却保护',
+    ),
     icon: Server,
     color: 'text-red-400',
     bgColor: 'bg-red-400/10 border-red-400/20',
   },
   network_error: {
     label: t('provider.reasons.networkError'),
-    description: t('provider.reasons.networkErrorDesc', '无法连接到上游服务器，可能是网络故障或服务器宕机'),
+    description: t(
+      'provider.reasons.networkErrorDesc',
+      '无法连接到上游服务器，可能是网络故障或服务器宕机',
+    ),
     icon: Wifi,
     color: 'text-amber-400',
     bgColor: 'bg-amber-400/10 border-amber-400/20',
@@ -76,7 +79,7 @@ const getReasonInfo = (t: TFunction) => ({
     color: 'text-muted-foreground',
     bgColor: 'bg-muted border-border',
   },
-})
+});
 
 export function CooldownDetailsDialog({
   cooldown,
@@ -87,38 +90,38 @@ export function CooldownDetailsDialog({
   onDisable,
   isDisabling,
 }: CooldownDetailsDialogProps) {
-  const { t, i18n } = useTranslation()
-  const REASON_INFO = getReasonInfo(t)
+  const { t, i18n } = useTranslation();
+  const REASON_INFO = getReasonInfo(t);
   // 获取 formatRemaining 函数用于实时倒计时
-  const { formatRemaining } = useCooldowns()
+  const { formatRemaining } = useCooldowns();
 
   // 计算初始倒计时值
   const getInitialCountdown = useCallback(() => {
-    return cooldown ? formatRemaining(cooldown) : ''
-  }, [cooldown, formatRemaining])
+    return cooldown ? formatRemaining(cooldown) : '';
+  }, [cooldown, formatRemaining]);
 
   // 实时倒计时状态
-  const [liveCountdown, setLiveCountdown] = useState<string>(getInitialCountdown)
+  const [liveCountdown, setLiveCountdown] = useState<string>(getInitialCountdown);
 
   // 每秒更新倒计时
   useEffect(() => {
-    if (!cooldown) return
+    if (!cooldown) return;
 
     // 每秒更新
     const interval = setInterval(() => {
-      setLiveCountdown(formatRemaining(cooldown))
-    }, 1000)
+      setLiveCountdown(formatRemaining(cooldown));
+    }, 1000);
 
-    return () => clearInterval(interval)
-  }, [cooldown, formatRemaining])
+    return () => clearInterval(interval);
+  }, [cooldown, formatRemaining]);
 
-  if (!cooldown) return null
+  if (!cooldown) return null;
 
-  const reasonInfo = REASON_INFO[cooldown.reason] || REASON_INFO.unknown
-  const Icon = reasonInfo.icon
+  const reasonInfo = REASON_INFO[cooldown.reason] || REASON_INFO.unknown;
+  const Icon = reasonInfo.icon;
 
   const formatUntilTime = (until: string) => {
-    const date = new Date(until)
+    const date = new Date(until);
     return date.toLocaleString(i18n.resolvedLanguage ?? i18n.language, {
       month: '2-digit',
       day: '2-digit',
@@ -126,11 +129,11 @@ export function CooldownDetailsDialog({
       minute: '2-digit',
       second: '2-digit',
       hour12: false,
-    })
-  }
+    });
+  };
 
-  const untilDateStr = formatUntilTime(cooldown.untilTime)
-  const [datePart, timePart] = untilDateStr.split(' ')
+  const untilDateStr = formatUntilTime(cooldown.untilTime);
+  const [datePart, timePart] = untilDateStr.split(' ');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -149,15 +152,10 @@ export function CooldownDetailsDialog({
 
           <div className="flex flex-col items-center text-center space-y-3">
             <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-400/20 shadow-[0_0_15px_-3px_rgba(6,182,212,0.2)]">
-              <Snowflake
-                size={28}
-                className="text-cyan-400 animate-spin-slow"
-              />
+              <Snowflake size={28} className="text-cyan-400 animate-spin-slow" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-text-primary">
-                {t('cooldown.title')}
-              </h2>
+              <h2 className="text-xl font-bold text-text-primary">{t('cooldown.title')}</h2>
               <p className="text-xs text-cyan-500/80 font-medium uppercase tracking-wider mt-1">
                 Frozen Protocol Active
               </p>
@@ -193,9 +191,7 @@ export function CooldownDetailsDialog({
                 <Icon size={20} />
               </div>
               <div>
-                <h3 className={`text-sm font-bold ${reasonInfo.color} mb-1`}>
-                  {reasonInfo.label}
-                </h3>
+                <h3 className={`text-sm font-bold ${reasonInfo.color} mb-1`}>{reasonInfo.label}</h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   {reasonInfo.description}
                 </p>
@@ -210,9 +206,7 @@ export function CooldownDetailsDialog({
               <div className="absolute inset-0 bg-cyan-400/5 opacity-50 group-hover:opacity-100 transition-opacity" />
               <div className="relative flex items-center gap-1.5 text-cyan-500 mb-1">
                 <Thermometer size={14} />
-                <span className="text-[10px] font-bold uppercase tracking-widest">
-                  Remaining
-                </span>
+                <span className="text-[10px] font-bold uppercase tracking-widest">Remaining</span>
               </div>
               <div className="relative font-mono text-4xl font-bold text-cyan-400 tracking-widest tabular-nums drop-shadow-[0_0_8px_rgba(34,211,238,0.3)]">
                 {liveCountdown}
@@ -224,18 +218,14 @@ export function CooldownDetailsDialog({
               <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold flex items-center gap-1.5">
                 <Clock size={10} /> Resume
               </span>
-              <div className="font-mono text-sm font-semibold text-foreground">
-                {timePart}
-              </div>
+              <div className="font-mono text-sm font-semibold text-foreground">{timePart}</div>
             </div>
 
             <div className="p-3 rounded-xl bg-muted border border-border flex flex-col items-center justify-center gap-1">
               <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold flex items-center gap-1.5">
                 <Calendar size={10} /> Date
               </span>
-              <div className="font-mono text-sm font-semibold text-foreground">
-                {datePart}
-              </div>
+              <div className="font-mono text-sm font-semibold text-foreground">{datePart}</div>
             </div>
           </div>
 
@@ -251,9 +241,7 @@ export function CooldownDetailsDialog({
                 {isClearing ? (
                   <>
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                    <span className="text-sm font-bold text-white">
-                      Thawing...
-                    </span>
+                    <span className="text-sm font-bold text-white">Thawing...</span>
                   </>
                 ) : (
                   <>
@@ -290,5 +278,5 @@ export function CooldownDetailsDialog({
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

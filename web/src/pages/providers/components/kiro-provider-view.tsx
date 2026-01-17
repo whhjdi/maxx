@@ -1,37 +1,29 @@
-import { useState, useEffect } from 'react'
-import {
-  Zap,
-  Mail,
-  ChevronLeft,
-  Trash2,
-  RefreshCw,
-  Clock,
-  AlertTriangle,
-} from 'lucide-react'
-import { useTranslation } from 'react-i18next'
-import { ClientIcon } from '@/components/icons/client-icons'
-import type { Provider, KiroQuotaData } from '@/lib/transport'
-import { getTransport } from '@/lib/transport'
-import { KIRO_COLOR } from '../types'
+import { useState, useEffect } from 'react';
+import { Zap, Mail, ChevronLeft, Trash2, RefreshCw, Clock, AlertTriangle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { ClientIcon } from '@/components/icons/client-icons';
+import type { Provider, KiroQuotaData } from '@/lib/transport';
+import { getTransport } from '@/lib/transport';
+import { KIRO_COLOR } from '../types';
 
 interface KiroProviderViewProps {
-  provider: Provider
-  onDelete: () => void
-  onClose: () => void
+  provider: Provider;
+  onDelete: () => void;
+  onClose: () => void;
 }
 
 // 配额条的颜色
 function getQuotaColor(percentage: number): string {
-  if (percentage >= 50) return 'bg-success'
-  if (percentage >= 20) return 'bg-warning'
-  return 'bg-error'
+  if (percentage >= 50) return 'bg-success';
+  if (percentage >= 20) return 'bg-warning';
+  return 'bg-error';
 }
 
 // 格式化重置天数
 function formatResetDays(days: number, t: (key: string) => string): string {
-  if (days <= 0) return t('proxy.comingSoon')
-  if (days === 1) return `1 ${t('common.day')}`
-  return `${days} ${t('common.days')}`
+  if (days <= 0) return t('proxy.comingSoon');
+  if (days === 1) return `1 ${t('common.day')}`;
+  return `${days} ${t('common.days')}`;
 }
 
 // 订阅等级徽章
@@ -39,7 +31,7 @@ function SubscriptionBadge({ type }: { type: string }) {
   const styles: Record<string, string> = {
     PRO: 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white',
     FREE: 'bg-gray-500/20 text-gray-400',
-  }
+  };
 
   return (
     <span
@@ -47,23 +39,20 @@ function SubscriptionBadge({ type }: { type: string }) {
     >
       {type || 'FREE'}
     </span>
-  )
+  );
 }
 
 // 配额卡片
 function QuotaCard({ quota }: { quota: KiroQuotaData }) {
-  const { t } = useTranslation()
-  const percentage = quota.total_limit > 0
-    ? Math.round((quota.available / quota.total_limit) * 100)
-    : 0
-  const color = getQuotaColor(percentage)
+  const { t } = useTranslation();
+  const percentage =
+    quota.total_limit > 0 ? Math.round((quota.available / quota.total_limit) * 100) : 0;
+  const color = getQuotaColor(percentage);
 
   return (
     <div className="bg-card border border-border rounded-xl p-6">
       <div className="flex items-center justify-between mb-4">
-        <span className="font-medium text-foreground text-lg">
-          Usage Quota
-        </span>
+        <span className="font-medium text-foreground text-lg">Usage Quota</span>
         <span className="text-sm text-muted-foreground flex items-center gap-1.5">
           <Clock size={14} />
           {t('proxy.resetsIn')} {formatResetDays(quota.days_until_reset, t)}
@@ -86,28 +75,20 @@ function QuotaCard({ quota }: { quota: KiroQuotaData }) {
       {/* Quota Details */}
       <div className="grid grid-cols-3 gap-4 pt-4 border-t border-border/50">
         <div className="text-center">
-          <div className="text-2xl font-bold text-foreground">
-            {quota.available.toFixed(1)}
-          </div>
+          <div className="text-2xl font-bold text-foreground">{quota.available.toFixed(1)}</div>
           <div className="text-xs text-muted-foreground uppercase tracking-wider mt-1">
             Available
           </div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-muted-foreground">
-            {quota.used.toFixed(1)}
-          </div>
-          <div className="text-xs text-muted-foreground uppercase tracking-wider mt-1">
-            Used
-          </div>
+          <div className="text-2xl font-bold text-muted-foreground">{quota.used.toFixed(1)}</div>
+          <div className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Used</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-muted-foreground">
             {quota.total_limit.toFixed(1)}
           </div>
-          <div className="text-xs text-muted-foreground uppercase tracking-wider mt-1">
-            Total
-          </div>
+          <div className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Total</div>
         </div>
       </div>
 
@@ -115,39 +96,36 @@ function QuotaCard({ quota }: { quota: KiroQuotaData }) {
       {quota.free_trial_status && (
         <div className="mt-4 pt-4 border-t border-border/50">
           <span className="text-xs text-muted-foreground">
-            Free Trial: <span className="text-emerald-500 font-medium">{quota.free_trial_status}</span>
+            Free Trial:{' '}
+            <span className="text-emerald-500 font-medium">{quota.free_trial_status}</span>
           </span>
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export function KiroProviderView({
-  provider,
-  onDelete,
-  onClose,
-}: KiroProviderViewProps) {
-  const [quota, setQuota] = useState<KiroQuotaData | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+export function KiroProviderView({ provider, onDelete, onClose }: KiroProviderViewProps) {
+  const [quota, setQuota] = useState<KiroQuotaData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchQuota = async () => {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
-      const data = await getTransport().getKiroProviderQuota(provider.id)
-      setQuota(data)
+      const data = await getTransport().getKiroProviderQuota(provider.id);
+      setQuota(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch quota')
+      setError(err instanceof Error ? err.message : 'Failed to fetch quota');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchQuota()
-  }, [provider.id]) // eslint-disable-line react-hooks/exhaustive-deps
+    fetchQuota();
+  }, [provider.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="flex flex-col h-full">
@@ -160,12 +138,8 @@ export function KiroProviderView({
             <ChevronLeft size={20} />
           </button>
           <div>
-            <h2 className="text-headline font-semibold text-foreground">
-              {provider.name}
-            </h2>
-            <p className="text-caption text-muted-foreground">
-              Kiro Provider
-            </p>
+            <h2 className="text-headline font-semibold text-foreground">{provider.name}</h2>
+            <p className="text-caption text-muted-foreground">Kiro Provider</p>
           </div>
         </div>
         <button
@@ -191,9 +165,7 @@ export function KiroProviderView({
                 </div>
                 <div>
                   <div className="flex items-center gap-3">
-                    <h3 className="text-xl font-bold text-foreground">
-                      {provider.name}
-                    </h3>
+                    <h3 className="text-xl font-bold text-foreground">{provider.name}</h3>
                     {quota?.subscription_type && (
                       <SubscriptionBadge type={quota.subscription_type} />
                     )}
@@ -230,18 +202,13 @@ export function KiroProviderView({
           {/* Quota Section */}
           <div>
             <div className="flex items-center justify-between mb-4 border-b border-border pb-2">
-              <h4 className="text-lg font-semibold text-foreground">
-                Usage Quota
-              </h4>
+              <h4 className="text-lg font-semibold text-foreground">Usage Quota</h4>
               <button
                 onClick={() => fetchQuota()}
                 disabled={loading}
                 className="btn bg-muted hover:bg-accent text-foreground flex items-center gap-2 text-sm"
               >
-                <RefreshCw
-                  size={14}
-                  className={loading ? 'animate-spin' : ''}
-                />
+                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
                 Refresh
               </button>
             </div>
@@ -284,8 +251,7 @@ export function KiroProviderView({
 
             {quota?.last_updated && (
               <p className="text-xs text-muted-foreground mt-4 text-right">
-                Last updated:{' '}
-                {new Date(quota.last_updated * 1000).toLocaleString()}
+                Last updated: {new Date(quota.last_updated * 1000).toLocaleString()}
               </p>
             )}
           </div>
@@ -297,16 +263,14 @@ export function KiroProviderView({
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {provider.supportedClientTypes?.length > 0 ? (
-                provider.supportedClientTypes.map(ct => (
+                provider.supportedClientTypes.map((ct) => (
                   <div
                     key={ct}
                     className="flex items-center gap-3 bg-card border border-border rounded-xl p-4 shadow-sm"
                   >
                     <ClientIcon type={ct} size={28} />
                     <div>
-                      <div className="text-sm font-semibold text-foreground capitalize">
-                        {ct}
-                      </div>
+                      <div className="text-sm font-semibold text-foreground capitalize">{ct}</div>
                       <div className="text-xs text-muted-foreground">Enabled</div>
                     </div>
                   </div>
@@ -321,5 +285,5 @@ export function KiroProviderView({
         </div>
       </div>
     </div>
-  )
+  );
 }

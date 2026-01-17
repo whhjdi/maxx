@@ -91,14 +91,14 @@ export function useProxyRequestUpdates() {
               items: [updatedRequest, ...old.items],
               firstId: updatedRequest.id,
             };
-          }
+          },
         );
 
         // 新请求时乐观更新 count
         if (isNewRequest) {
           queryClient.setQueryData<number>(['requestsCount'], (old) => (old ?? 0) + 1);
         }
-      }
+      },
     );
 
     // 订阅 ProxyUpstreamAttempt 更新事件
@@ -117,9 +117,9 @@ export function useProxyRequestUpdates() {
               return newList;
             }
             return [...old, updatedAttempt];
-          }
+          },
         );
-      }
+      },
     );
 
     return () => {

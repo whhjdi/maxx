@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState } from 'react';
 import {
   ChevronLeft,
   Loader2,
@@ -9,75 +9,71 @@ import {
   ShieldCheck,
   Zap,
   Ban,
-} from 'lucide-react'
-import { getTransport } from '@/lib/transport'
-import type { KiroTokenValidationResult, CreateProviderData } from '@/lib/transport'
-import { KIRO_COLOR } from '../types'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { useTranslation } from 'react-i18next'
+} from 'lucide-react';
+import { getTransport } from '@/lib/transport';
+import type { KiroTokenValidationResult, CreateProviderData } from '@/lib/transport';
+import { KIRO_COLOR } from '../types';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useTranslation } from 'react-i18next';
 
 interface KiroTokenImportProps {
-  onBack: () => void
-  onCreateProvider: (data: CreateProviderData) => Promise<void>
+  onBack: () => void;
+  onCreateProvider: (data: CreateProviderData) => Promise<void>;
 }
 
-export function KiroTokenImport({
-  onBack,
-  onCreateProvider,
-}: KiroTokenImportProps) {
-  const { t } = useTranslation()
-  const [email, setEmail] = useState('')
-  const [token, setToken] = useState('')
-  const [validating, setValidating] = useState(false)
-  const [creating, setCreating] = useState(false)
-  const [validationResult, setValidationResult] =
-    useState<KiroTokenValidationResult | null>(null)
-  const [error, setError] = useState<string | null>(null)
+export function KiroTokenImport({ onBack, onCreateProvider }: KiroTokenImportProps) {
+  const { t } = useTranslation();
+  const [email, setEmail] = useState('');
+  const [token, setToken] = useState('');
+  const [validating, setValidating] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [validationResult, setValidationResult] = useState<KiroTokenValidationResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // 验证 token
   const handleValidate = async () => {
     if (token.trim() === '') {
-      setError('Please enter a refresh token')
-      return
+      setError('Please enter a refresh token');
+      return;
     }
 
-    setValidating(true)
-    setError(null)
-    setValidationResult(null)
+    setValidating(true);
+    setError(null);
+    setValidationResult(null);
 
     try {
-      const result = await getTransport().validateKiroSocialToken(token.trim())
-      setValidationResult(result)
+      const result = await getTransport().validateKiroSocialToken(token.trim());
+      setValidationResult(result);
       if (!result.valid) {
-        setError(result.error || t('provider.tokenValidationFailed'))
+        setError(result.error || t('provider.tokenValidationFailed'));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('provider.validationFailed'))
+      setError(err instanceof Error ? err.message : t('provider.validationFailed'));
     } finally {
-      setValidating(false)
+      setValidating(false);
     }
-  }
+  };
 
   // 创建 provider
   const handleCreate = async () => {
     if (!validationResult?.valid) {
-      setError('Please validate the token first')
-      return
+      setError('Please validate the token first');
+      return;
     }
 
     // 不允许创建被封禁的账号
     if (validationResult.isBanned) {
-      setError('Cannot create provider for a banned account')
-      return
+      setError('Cannot create provider for a banned account');
+      return;
     }
 
-    setCreating(true)
-    setError(null)
+    setCreating(true);
+    setError(null);
 
     try {
       // 优先使用验证返回的邮箱，其次使用用户输入的邮箱
-      const finalEmail = validationResult.email || email.trim() || ''
+      const finalEmail = validationResult.email || email.trim() || '';
       const providerData: CreateProviderData = {
         type: 'kiro',
         name: finalEmail || 'Kiro Account',
@@ -89,16 +85,16 @@ export function KiroTokenImport({
             region: 'us-east-1',
           },
         },
-      }
-      await onCreateProvider(providerData)
+      };
+      await onCreateProvider(providerData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create provider')
+      setError(err instanceof Error ? err.message : 'Failed to create provider');
     } finally {
-      setCreating(false)
+      setCreating(false);
     }
-  }
+  };
 
-  const isTokenValid = token.trim().length > 0
+  const isTokenValid = token.trim().length > 0;
 
   return (
     <div className="flex flex-col h-full bg-card">
@@ -127,9 +123,7 @@ export function KiroTokenImport({
         <div className="container max-w-2xl mx-auto py-8 px-6 space-y-8">
           {/* Hero Section */}
           <div className="text-center space-y-2 mb-8">
-            <h1 className="text-2xl font-bold text-foreground">
-              Import Kiro Social Token
-            </h1>
+            <h1 className="text-2xl font-bold text-foreground">Import Kiro Social Token</h1>
             <p className="text-muted-foreground mx-auto">
               Enter your Kiro Social refresh token to connect your account.
             </p>
@@ -143,9 +137,7 @@ export function KiroTokenImport({
                   <ShieldCheck size={18} className="text-foreground" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-foreground">
-                    Credentials
-                  </h3>
+                  <h3 className="text-base font-semibold text-foreground">Credentials</h3>
                   <p className="text-xs text-muted-foreground">
                     Enter your Kiro Social account details
                   </p>
@@ -165,14 +157,13 @@ export function KiroTokenImport({
                 <Input
                   type="email"
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="e.g. user@example.com"
                   className="bg-card"
                   disabled={validating || creating}
                 />
                 <p className="text-[11px] text-muted-foreground pl-1">
-                  Used for display purposes only. Auto-detected from token if
-                  available.
+                  Used for display purposes only. Auto-detected from token if available.
                 </p>
               </div>
 
@@ -184,9 +175,9 @@ export function KiroTokenImport({
                 <div className="relative">
                   <textarea
                     value={token}
-                    onChange={e => {
-                      setToken(e.target.value)
-                      setValidationResult(null)
+                    onChange={(e) => {
+                      setToken(e.target.value);
+                      setValidationResult(null);
                     }}
                     placeholder="Paste your Kiro Social refresh token here..."
                     className="w-full h-32 px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground font-mono text-xs resize-none focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all"
@@ -226,14 +217,9 @@ export function KiroTokenImport({
             {/* Error Message */}
             {error && (
               <div className="bg-error/5 border border-error/20 rounded-xl p-4 flex items-start gap-3 animate-in fade-in zoom-in-95">
-                <AlertCircle
-                  size={20}
-                  className="text-error shrink-0 mt-0.5"
-                />
+                <AlertCircle size={20} className="text-error shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-error">
-                    Validation Failed
-                  </p>
+                  <p className="text-sm font-medium text-error">Validation Failed</p>
                   <p className="text-xs text-error/80 mt-0.5">{error}</p>
                 </div>
               </div>
@@ -247,9 +233,7 @@ export function KiroTokenImport({
                     <Ban size={24} className="text-warning" />
                   </div>
                   <div className="flex-1 space-y-1">
-                    <div className="font-semibold text-foreground">
-                      Account Banned
-                    </div>
+                    <div className="font-semibold text-foreground">Account Banned</div>
                     <div className="text-sm text-muted-foreground">
                       This account has been banned and cannot be used.
                     </div>
@@ -271,9 +255,7 @@ export function KiroTokenImport({
                     <CheckCircle2 size={24} className="text-success" />
                   </div>
                   <div className="flex-1 space-y-1">
-                    <div className="font-semibold text-foreground">
-                      Token Verified Successfully
-                    </div>
+                    <div className="font-semibold text-foreground">Token Verified Successfully</div>
                     <div className="text-sm text-muted-foreground">
                       Ready to connect as{' '}
                       <span className="font-medium text-foreground">
@@ -322,11 +304,7 @@ export function KiroTokenImport({
             <div className="pt-4">
               <Button
                 onClick={handleCreate}
-                disabled={
-                  !validationResult?.valid ||
-                  validationResult.isBanned ||
-                  creating
-                }
+                disabled={!validationResult?.valid || validationResult.isBanned || creating}
                 size="lg"
                 className="w-full text-base shadow-lg shadow-accent/20 hover:shadow-accent/30 transition-all"
               >
@@ -344,5 +322,5 @@ export function KiroTokenImport({
         </div>
       </div>
     </div>
-  )
+  );
 }

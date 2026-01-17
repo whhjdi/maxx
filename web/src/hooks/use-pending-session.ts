@@ -16,7 +16,7 @@ export function usePendingSession() {
       'new_session_pending',
       (event) => {
         setPendingSession(event);
-      }
+      },
     );
 
     const unsubscribeCancelled = transport.subscribe<SessionPendingCancelledEvent>(
@@ -29,7 +29,7 @@ export function usePendingSession() {
           }
           return current;
         });
-      }
+      },
     );
 
     return () => {

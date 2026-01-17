@@ -1,63 +1,52 @@
-import {
-  GripVertical,
-  Zap,
-  RefreshCw,
-  Activity,
-  Snowflake,
-  Info,
-} from 'lucide-react'
-import { Button, Switch } from '@/components/ui'
-import { StreamingBadge } from '@/components/ui/streaming-badge'
-import { useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import { getProviderColorVar, type ProviderType } from '@/lib/theme'
-import { cn } from '@/lib/utils'
-import type {
-  ClientType,
-  ProviderStats,
-  AntigravityQuotaData,
-} from '@/lib/transport'
-import type { ProviderConfigItem } from '../types'
-import { useAntigravityQuota } from '@/hooks/queries'
-import { useCooldowns } from '@/hooks/use-cooldowns'
-import { ProviderDetailsDialog } from '@/components/provider-details-dialog'
-import { useState, useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
+import { GripVertical, Zap, RefreshCw, Activity, Snowflake, Info } from 'lucide-react';
+import { Button, Switch } from '@/components/ui';
+import { StreamingBadge } from '@/components/ui/streaming-badge';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { getProviderColorVar, type ProviderType } from '@/lib/theme';
+import { cn } from '@/lib/utils';
+import type { ClientType, ProviderStats, AntigravityQuotaData } from '@/lib/transport';
+import type { ProviderConfigItem } from '../types';
+import { useAntigravityQuota } from '@/hooks/queries';
+import { useCooldowns } from '@/hooks/use-cooldowns';
+import { ProviderDetailsDialog } from '@/components/provider-details-dialog';
+import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 // 格式化 Token 数量
 function formatTokens(count: number): string {
   if (count >= 1_000_000) {
-    return `${(count / 1_000_000).toFixed(1)}M`
+    return `${(count / 1_000_000).toFixed(1)}M`;
   }
   if (count >= 1_000) {
-    return `${(count / 1_000).toFixed(1)}K`
+    return `${(count / 1_000).toFixed(1)}K`;
   }
-  return count.toString()
+  return count.toString();
 }
 
 // 格式化成本 (微美元 → 美元)
 function formatCost(microUsd: number): string {
-  const usd = microUsd / 1_000_000
+  const usd = microUsd / 1_000_000;
   if (usd >= 1) {
-    return `$${usd.toFixed(2)}`
+    return `$${usd.toFixed(2)}`;
   }
   if (usd >= 0.01) {
-    return `$${usd.toFixed(3)}`
+    return `$${usd.toFixed(3)}`;
   }
-  return `$${usd.toFixed(4)}`
+  return `$${usd.toFixed(4)}`;
 }
 
 // Sortable Provider Row
 type SortableProviderRowProps = {
-  item: ProviderConfigItem
-  index: number
-  clientType: ClientType
-  streamingCount: number
-  stats?: ProviderStats
-  isToggling: boolean
-  onToggle: () => void
-  onDelete?: () => void
-}
+  item: ProviderConfigItem;
+  index: number;
+  clientType: ClientType;
+  streamingCount: number;
+  stats?: ProviderStats;
+  isToggling: boolean;
+  onToggle: () => void;
+  onDelete?: () => void;
+};
 
 export function SortableProviderRow({
   item,
@@ -69,50 +58,38 @@ export function SortableProviderRow({
   onToggle,
   onDelete,
 }: SortableProviderRowProps) {
-  const [showDetailsDialog, setShowDetailsDialog] = useState(false)
-  const { getCooldownForProvider, clearCooldown, isClearingCooldown } =
-    useCooldowns()
-  const cooldown = getCooldownForProvider(item.provider.id, clientType)
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const { getCooldownForProvider, clearCooldown, isClearingCooldown } = useCooldowns();
+  const cooldown = getCooldownForProvider(item.provider.id, clientType);
 
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
     transition: {
       duration: 200,
       easing: 'ease',
     },
-  })
+  });
 
   const style: React.CSSProperties = {
     transform: transform ? CSS.Translate.toString(transform) : undefined,
     transition,
     opacity: isDragging ? 0 : 1,
     pointerEvents: isDragging ? 'none' : undefined,
-  }
+  };
 
   const handleRowClick = (e: React.MouseEvent) => {
     // 所有状态都打开详情弹窗
-    e.stopPropagation()
-    setShowDetailsDialog(true)
-  }
+    e.stopPropagation();
+    setShowDetailsDialog(true);
+  };
 
   const handleClearCooldown = () => {
-    clearCooldown(item.provider.id)
-  }
+    clearCooldown(item.provider.id);
+  };
 
   return (
     <>
-      <div
-        ref={setNodeRef}
-        style={style}
-        {...attributes}
-      >
+      <div ref={setNodeRef} style={style} {...attributes}>
         <ProviderRowContent
           item={item}
           index={index}
@@ -143,59 +120,59 @@ export function SortableProviderRow({
         isClearingCooldown={isClearingCooldown}
       />
     </>
-  )
+  );
 }
 
 // Provider Row Content (used both in sortable and overlay)
 type ProviderRowContentProps = {
-  item: ProviderConfigItem
-  index: number
-  clientType: ClientType
-  streamingCount: number
-  stats?: ProviderStats
-  isToggling: boolean
-  isOverlay?: boolean
-  onToggle: () => void
-  onRowClick?: (e: React.MouseEvent) => void
-  isInCooldown?: boolean
-  dragHandleListeners?: any
-}
+  item: ProviderConfigItem;
+  index: number;
+  clientType: ClientType;
+  streamingCount: number;
+  stats?: ProviderStats;
+  isToggling: boolean;
+  isOverlay?: boolean;
+  onToggle: () => void;
+  onRowClick?: (e: React.MouseEvent) => void;
+  isInCooldown?: boolean;
+  dragHandleListeners?: any;
+};
 
 // 获取 Claude 模型额度百分比和重置时间
 function getClaudeQuotaInfo(
-  quota: AntigravityQuotaData | undefined
+  quota: AntigravityQuotaData | undefined,
 ): { percentage: number; resetTime: string } | null {
-  if (!quota || quota.isForbidden || !quota.models) return null
-  const claudeModel = quota.models.find(m => m.name.includes('claude'))
-  if (!claudeModel) return null
+  if (!quota || quota.isForbidden || !quota.models) return null;
+  const claudeModel = quota.models.find((m) => m.name.includes('claude'));
+  if (!claudeModel) return null;
   return {
     percentage: claudeModel.percentage,
     resetTime: claudeModel.resetTime,
-  }
+  };
 }
 
 // 格式化重置时间
 function formatResetTime(resetTime: string, t: (key: string) => string): string {
   try {
-    const reset = new Date(resetTime)
-    const now = new Date()
-    const diff = reset.getTime() - now.getTime()
+    const reset = new Date(resetTime);
+    const now = new Date();
+    const diff = reset.getTime() - now.getTime();
 
-    if (diff <= 0) return t('proxy.comingSoon')
+    if (diff <= 0) return t('proxy.comingSoon');
 
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
     if (hours > 24) {
-      const days = Math.floor(hours / 24)
-      return `${days}d`
+      const days = Math.floor(hours / 24);
+      return `${days}d`;
     }
     if (hours > 0) {
-      return `${hours}h`
+      return `${hours}h`;
     }
-    return `${minutes}m`
+    return `${minutes}m`;
   } catch {
-    return '-'
+    return '-';
   }
 }
 
@@ -212,45 +189,45 @@ export function ProviderRowContent({
   isInCooldown: isInCooldownProp,
   dragHandleListeners,
 }: ProviderRowContentProps) {
-  const { t } = useTranslation()
-  const { provider, enabled, isNative } = item
-  const color = getProviderColorVar(provider.type as ProviderType)
-  const isAntigravity = provider.type === 'antigravity'
+  const { t } = useTranslation();
+  const { provider, enabled, isNative } = item;
+  const color = getProviderColorVar(provider.type as ProviderType);
+  const isAntigravity = provider.type === 'antigravity';
 
   // 仅为 Antigravity provider 获取额度
-  const { data: quota } = useAntigravityQuota(provider.id, isAntigravity)
-  const claudeInfo = isAntigravity ? getClaudeQuotaInfo(quota) : null
+  const { data: quota } = useAntigravityQuota(provider.id, isAntigravity);
+  const claudeInfo = isAntigravity ? getClaudeQuotaInfo(quota) : null;
 
   // 获取 cooldown 状态
-  const { getCooldownForProvider, formatRemaining } = useCooldowns()
-  const cooldown = getCooldownForProvider(provider.id, clientType)
-  const isInCooldown = isInCooldownProp ?? !!cooldown
+  const { getCooldownForProvider, formatRemaining } = useCooldowns();
+  const cooldown = getCooldownForProvider(provider.id, clientType);
+  const isInCooldown = isInCooldownProp ?? !!cooldown;
 
   // 实时倒计时状态
-  const [liveCountdown, setLiveCountdown] = useState<string>('')
+  const [liveCountdown, setLiveCountdown] = useState<string>('');
 
   // 每秒更新倒计时
   useEffect(() => {
     if (!cooldown) {
-      setLiveCountdown('')
-      return
+      setLiveCountdown('');
+      return;
     }
 
     // 立即更新一次
-    setLiveCountdown(formatRemaining(cooldown))
+    setLiveCountdown(formatRemaining(cooldown));
 
     // 每秒更新
     const interval = setInterval(() => {
-      setLiveCountdown(formatRemaining(cooldown))
-    }, 1000)
+      setLiveCountdown(formatRemaining(cooldown));
+    }, 1000);
 
-    return () => clearInterval(interval)
-  }, [cooldown, formatRemaining])
+    return () => clearInterval(interval);
+  }, [cooldown, formatRemaining]);
 
   const handleContentClick = (e: React.MouseEvent) => {
     // 所有状态都打开详情弹窗
-    onRowClick?.(e)
-  }
+    onRowClick?.(e);
+  };
 
   return (
     <Button
@@ -264,17 +241,12 @@ export function ProviderRowContent({
             ? streamingCount > 0
               ? 'bg-accent/5 border-transparent ring-1 ring-black/5 dark:ring-white/10'
               : 'bg-card/60 border-border hover:border-emerald-500/30 hover:bg-card shadow-sm cursor-pointer'
-            : 'bg-muted/40 border-dashed border-border opacity-70 cursor-pointer grayscale-[0.5] hover:opacity-100 hover:grayscale-0'
+            : 'bg-muted/40 border-dashed border-border opacity-70 cursor-pointer grayscale-[0.5] hover:opacity-100 hover:grayscale-0',
       )}
       style={{
-        borderColor:
-          !isInCooldown && enabled && streamingCount > 0
-            ? `${color}40`
-            : undefined,
+        borderColor: !isInCooldown && enabled && streamingCount > 0 ? `${color}40` : undefined,
         boxShadow:
-          !isInCooldown && enabled && streamingCount > 0
-            ? `0 0 20px ${color}15`
-            : undefined,
+          !isInCooldown && enabled && streamingCount > 0 ? `0 0 20px ${color}15` : undefined,
       }}
     >
       {/* Marquee 背景动画 (仅在有 streaming 请求时显示) */}
@@ -298,7 +270,7 @@ export function ProviderRowContent({
 
       {/* Drag Handle & Index */}
       <div className="relative z-10 flex flex-col items-center gap-1.5 w-7 shrink-0">
-        <div 
+        <div
           className="p-1 rounded-md hover:bg-accent transition-colors cursor-grab active:cursor-grabbing"
           {...dragHandleListeners}
         >
@@ -323,7 +295,7 @@ export function ProviderRowContent({
             'relative w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-all duration-500 overflow-hidden',
             isInCooldown
               ? 'bg-cyan-900/40 border border-cyan-500/30'
-              : 'bg-muted border border-border shadow-inner'
+              : 'bg-muted border border-border shadow-inner',
           )}
           style={!isInCooldown && enabled ? { color } : {}}
         >
@@ -334,7 +306,7 @@ export function ProviderRowContent({
                 ? 'text-cyan-400 opacity-20 scale-150 blur-[1px]'
                 : enabled
                   ? 'scale-100'
-                  : 'opacity-30 grayscale'
+                  : 'opacity-30 grayscale',
             )}
           >
             {provider.name.charAt(0).toUpperCase()}
@@ -360,7 +332,7 @@ export function ProviderRowContent({
                   ? 'text-foreground'
                   : enabled
                     ? 'text-foreground'
-                    : 'text-muted-foreground'
+                    : 'text-muted-foreground',
               )}
             >
               {provider.name}
@@ -385,7 +357,7 @@ export function ProviderRowContent({
                 ? 'text-muted-foreground'
                 : enabled
                   ? 'text-muted-foreground'
-                  : 'text-muted-foreground/50'
+                  : 'text-muted-foreground/50',
             )}
           >
             <Info size={10} className="shrink-0" />
@@ -401,9 +373,7 @@ export function ProviderRowContent({
       <div className="relative z-10 flex items-center gap-4 shrink-0">
         {/* Claude Quota */}
         {isAntigravity && (
-          <div
-            className={cn('w-24 flex flex-col gap-1', !enabled && 'opacity-40')}
-          >
+          <div className={cn('w-24 flex flex-col gap-1', !enabled && 'opacity-40')}>
             <div className="flex items-center justify-between px-0.5">
               <span className="text-[9px] font-black text-muted-foreground/80 uppercase tracking-tighter">
                 Claude
@@ -423,7 +393,7 @@ export function ProviderRowContent({
                       ? 'bg-emerald-500'
                       : claudeInfo.percentage >= 20
                         ? 'bg-amber-500'
-                        : 'bg-red-500'
+                        : 'bg-red-500',
                   )}
                   style={{
                     width: `${claudeInfo.percentage}%`,
@@ -467,7 +437,7 @@ export function ProviderRowContent({
           <div
             className={cn(
               'flex items-center gap-px bg-muted/50 rounded-xl border border-border/60 p-0.5 backdrop-blur-sm',
-              !enabled && 'opacity-40'
+              !enabled && 'opacity-40',
             )}
           >
             {stats && stats.totalRequests > 0 ? (
@@ -484,7 +454,7 @@ export function ProviderRowContent({
                         ? 'text-emerald-500'
                         : stats.successRate >= 90
                           ? 'text-blue-400'
-                          : 'text-amber-500'
+                          : 'text-amber-500',
                     )}
                   >
                     {Math.round(stats.successRate)}%
@@ -497,9 +467,7 @@ export function ProviderRowContent({
                     TOKEN
                   </span>
                   <span className="font-mono font-black text-xs text-blue-400">
-                    {formatTokens(
-                      stats.totalInputTokens + stats.totalOutputTokens
-                    )}
+                    {formatTokens(stats.totalInputTokens + stats.totalOutputTokens)}
                   </span>
                 </div>
                 <div className="w-[1px] h-6 bg-border/40" />
@@ -516,9 +484,7 @@ export function ProviderRowContent({
             ) : (
               <div className="px-6 py-2 flex items-center gap-2 text-muted-foreground/30">
                 <Activity size={12} />
-                <span className="text-[10px] font-bold uppercase tracking-widest">
-                  No Data
-                </span>
+                <span className="text-[10px] font-bold uppercase tracking-widest">No Data</span>
               </div>
             )}
           </div>
@@ -533,15 +499,11 @@ export function ProviderRowContent({
       {/* Control Area - Switch */}
       <div
         className="relative z-10 flex items-center shrink-0  pl-2"
-        onClick={e => e.stopPropagation()}
-        onPointerDown={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
       >
-        <Switch
-          checked={enabled}
-          onCheckedChange={onToggle}
-          disabled={isToggling}
-        />
+        <Switch checked={enabled} onCheckedChange={onToggle} disabled={isToggling} />
       </div>
     </Button>
-  )
+  );
 }

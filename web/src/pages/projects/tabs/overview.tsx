@@ -20,24 +20,27 @@ export function OverviewTab({ project }: OverviewTabProps) {
   const [slug, setSlug] = useState(project.slug);
   const [copied, setCopied] = useState<string | null>(null);
 
-  const hasChanges =
-    name !== project.name ||
-    slug !== project.slug;
+  const hasChanges = name !== project.name || slug !== project.slug;
 
   const handleSave = () => {
     updateProject.mutate(
-      { id: project.id, data: { name, slug, enabledCustomRoutes: project.enabledCustomRoutes } },
+      {
+        id: project.id,
+        data: { name, slug, enabledCustomRoutes: project.enabledCustomRoutes },
+      },
       {
         onSuccess: (updatedProject) => {
           // Invalidate queries
           queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
-          queryClient.invalidateQueries({ queryKey: projectKeys.slug(project.slug) });
+          queryClient.invalidateQueries({
+            queryKey: projectKeys.slug(project.slug),
+          });
           // If slug changed, navigate to new URL
           if (slug !== project.slug) {
             navigate(`/projects/${updatedProject.slug}`, { replace: true });
           }
         },
-      }
+      },
     );
   };
 
@@ -61,7 +64,9 @@ export function OverviewTab({ project }: OverviewTabProps) {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium text-text-primary">{t('projects.name')}</label>
+              <label htmlFor="name" className="text-sm font-medium text-text-primary">
+                {t('projects.name')}
+              </label>
               <Input
                 id="name"
                 value={name}
@@ -70,7 +75,9 @@ export function OverviewTab({ project }: OverviewTabProps) {
               />
             </div>
             <div className="space-y-2">
-              <label htmlFor="slug" className="text-sm font-medium text-text-primary">{t('projects.slug')}</label>
+              <label htmlFor="slug" className="text-sm font-medium text-text-primary">
+                {t('projects.slug')}
+              </label>
               <Input
                 id="slug"
                 value={slug}
@@ -78,9 +85,7 @@ export function OverviewTab({ project }: OverviewTabProps) {
                 className="bg-surface-secondary border-border font-mono"
                 placeholder={t('projects.slugPlaceholder')}
               />
-              <p className="text-xs text-text-muted">
-                {t('projects.slugDesc')}
-              </p>
+              <p className="text-xs text-text-muted">{t('projects.slugDesc')}</p>
             </div>
           </div>
 
@@ -120,12 +125,12 @@ export function OverviewTab({ project }: OverviewTabProps) {
           <CardTitle className="text-base">{t('projects.proxyConfig')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-text-secondary">
-            {t('projects.proxyConfigDesc')}
-          </p>
+          <p className="text-sm text-text-secondary">{t('projects.proxyConfigDesc')}</p>
 
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-text-primary w-20">{t('projects.baseUrl')}</span>
+            <span className="text-sm font-medium text-text-primary w-20">
+              {t('projects.baseUrl')}
+            </span>
             <code className="flex-1 text-xs bg-surface-secondary px-3 py-2 rounded border border-border text-text-primary font-mono">
               {projectBaseUrl}
             </code>

@@ -7,20 +7,17 @@ import {
   CheckCircle2,
   FilePlus,
   Cloud,
-} from 'lucide-react'
-import {
-  quickTemplates,
-  PROVIDER_TYPE_CONFIGS,
-  type ProviderFormData,
-} from '../types'
-import { Button } from '@/components/ui'
+} from 'lucide-react';
+import { quickTemplates, PROVIDER_TYPE_CONFIGS, type ProviderFormData } from '../types';
+import { Button } from '@/components/ui';
+import { useTranslation } from 'react-i18next';
 
 interface SelectTypeStepProps {
-  formData: ProviderFormData
-  onSelectType: (type: 'custom' | 'antigravity' | 'kiro') => void
-  onApplyTemplate: (templateId: string) => void
-  onSkipToConfig: () => void
-  onBack: () => void
+  formData: ProviderFormData;
+  onSelectType: (type: 'custom' | 'antigravity' | 'kiro') => void;
+  onApplyTemplate: (templateId: string) => void;
+  onSkipToConfig: () => void;
+  onBack: () => void;
 }
 
 export function SelectTypeStep({
@@ -31,118 +28,120 @@ export function SelectTypeStep({
   onBack,
 }: SelectTypeStepProps) {
   // 计算可见的 provider 数量
-  const visibleProviderCount = Object.values(PROVIDER_TYPE_CONFIGS).filter(c => !c.hidden).length
-  const gridCols = visibleProviderCount <= 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'
+  const visibleProviderCount = Object.values(PROVIDER_TYPE_CONFIGS).filter((c) => !c.hidden).length;
+  const gridCols = visibleProviderCount <= 2 ? 'md:grid-cols-2' : 'md:grid-cols-3';
+
+  const { t } = useTranslation();
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-6 h-[73px] flex items-center gap-4  border-b border-border bg-card">
-        <Button onClick={onBack} variant={'ghost'}>
-          <ChevronLeft size={20} />
+      <div className="px-4 sm:px-6 h-[73px] flex items-center gap-4 border-b border-border bg-card">
+        <Button onClick={onBack} variant={'ghost'} size="icon">
+          <ChevronLeft className="size-5" />
         </Button>
-        <div>
-          <h2 className="text-headline font-semibold text-foreground">
-            Add Provider
+        <div className="flex-1 min-w-0">
+          <h2 className="text-base sm:text-lg font-semibold text-foreground truncate">
+            {t('addProvider.title')}
           </h2>
-          <p className="text-caption text-muted-foreground">
-            Choose a service provider to get started
+          <p className="text-xs sm:text-sm text-muted-foreground truncate">
+            {t('addProvider.subtitle')}
           </p>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="space-y-10">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 lg:space-y-10">
           {/* Section: Service Provider */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground border-b border-border pb-2">
-              1. Choose Service Provider
+          <div className="space-y-3 sm:space-y-4">
+            <h3 className="text-base sm:text-lg font-semibold text-foreground border-b border-border/60 pb-2.5">
+              1. {t('addProvider.chooseProvider')}
             </h3>
             <div className={`grid grid-cols-1 ${gridCols} gap-4 items-start`}>
               <Button
                 onClick={() => onSelectType('antigravity')}
                 variant="ghost"
-                className={`group p-0 rounded-lg border text-left transition-all h-auto w-full ${
+                className={`group p-0 rounded-xl border text-left h-auto w-full overflow-hidden transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                   formData.type === 'antigravity'
-                    ? 'border-provider-antigravity bg-provider-antigravity/10'
-                    : 'border-border bg-card hover:bg-muted'
+                    ? 'border-provider-antigravity bg-provider-antigravity/10 shadow-sm'
+                    : 'border-border bg-card hover:bg-muted hover:border-accent/30 hover:shadow-sm'
                 }`}
               >
-                <div className="p-5 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-md bg-provider-antigravity/15 flex items-center justify-center shrink-0">
-                    <Wand2 size={24} className="text-provider-antigravity" />
+                <div className="p-4 sm:p-5 flex items-center gap-3 sm:gap-4 min-w-0 w-full">
+                  <div className="size-10 sm:size-11 md:size-12 rounded-lg bg-provider-antigravity/15 flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105">
+                    <Wand2 className="size-5 md:size-6 text-provider-antigravity" />
                   </div>
 
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-headline font-semibold text-foreground mb-1">
-                      Antigravity Cloud
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <h3 className="text-sm sm:text-base font-semibold text-foreground leading-tight truncate">
+                      {t('addProvider.antigravity.name')}
                     </h3>
-                    <p className="text-caption text-muted-foreground">
-                      Zero-config managed service with OAuth
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed line-clamp-2">
+                      {t('addProvider.antigravity.description')}
                     </p>
                   </div>
 
                   {formData.type === 'antigravity' && (
-                    <CheckCircle2 size={20} className="text-provider-antigravity shrink-0" />
+                    <CheckCircle2 className="size-5 text-provider-antigravity shrink-0 self-center animate-in zoom-in-50 duration-200" />
                   )}
                 </div>
               </Button>
 
               {!PROVIDER_TYPE_CONFIGS.kiro.hidden && (
-              <Button
-                onClick={() => onSelectType('kiro')}
-                variant="ghost"
-                className={`group p-0 rounded-lg border text-left transition-all h-auto w-full ${
-                  formData.type === 'kiro'
-                    ? 'border-provider-kiro bg-provider-kiro/10'
-                    : 'border-border bg-card hover:bg-muted'
-                }`}
-              >
-                <div className="p-5 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-md bg-provider-kiro/15 flex items-center justify-center shrink-0">
-                    <Cloud size={24} className="text-provider-kiro" />
-                  </div>
+                <Button
+                  onClick={() => onSelectType('kiro')}
+                  variant="ghost"
+                  className={`group p-0 rounded-lg border text-left transition-all h-auto w-full ${
+                    formData.type === 'kiro'
+                      ? 'border-provider-kiro bg-provider-kiro/10'
+                      : 'border-border bg-card hover:bg-muted'
+                  }`}
+                >
+                  <div className="p-5 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-md bg-provider-kiro/15 flex items-center justify-center shrink-0">
+                      <Cloud size={24} className="text-provider-kiro" />
+                    </div>
 
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-headline font-semibold text-foreground mb-1">
-                      Kiro (Q Developer)
-                    </h3>
-                    <p className="text-caption text-muted-foreground">
-                      AWS CodeWhisperer / Q Developer
-                    </p>
-                  </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-headline font-semibold text-foreground mb-1">
+                        {t('addProvider.kiro.name')}
+                      </h3>
+                      <p className="text-caption text-muted-foreground">
+                        {t('addProvider.kiro.description')}
+                      </p>
+                    </div>
 
-                  {formData.type === 'kiro' && (
-                    <CheckCircle2 size={20} className="text-provider-kiro shrink-0" />
-                  )}
-                </div>
-              </Button>
+                    {formData.type === 'kiro' && (
+                      <CheckCircle2 size={20} className="text-provider-kiro shrink-0" />
+                    )}
+                  </div>
+                </Button>
               )}
 
               <Button
                 onClick={() => onSelectType('custom')}
                 variant="ghost"
-                className={`group p-0 rounded-lg border text-left transition-all h-auto w-full ${
+                className={`group p-0 rounded-xl border text-left h-auto w-full overflow-hidden transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                   formData.type === 'custom'
-                    ? 'border-provider-custom bg-provider-custom/10'
-                    : 'border-border bg-card hover:bg-muted'
+                    ? 'border-provider-custom bg-provider-custom/10 shadow-sm'
+                    : 'border-border bg-card hover:bg-muted hover:border-accent/30 hover:shadow-sm'
                 }`}
               >
-                <div className="p-5 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-md bg-provider-custom/15 flex items-center justify-center shrink-0">
-                    <Server size={24} className="text-provider-custom" />
+                <div className="p-4 sm:p-5 flex items-center gap-3 sm:gap-4 min-w-0 w-full">
+                  <div className="size-10 sm:size-11 md:size-12 rounded-lg bg-provider-custom/15 flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105">
+                    <Server className="size-5 md:size-6 text-provider-custom" />
                   </div>
 
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-headline font-semibold text-foreground mb-1">
-                      Custom Provider
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <h3 className="text-sm sm:text-base font-semibold text-foreground leading-tight truncate">
+                      {t('addProvider.custom.name')}
                     </h3>
-                    <p className="text-caption text-muted-foreground">
-                      Configure your own API endpoint
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed line-clamp-2">
+                      {t('addProvider.custom.description')}
                     </p>
                   </div>
 
                   {formData.type === 'custom' && (
-                    <CheckCircle2 size={20} className="text-provider-custom shrink-0" />
+                    <CheckCircle2 className="size-5 text-provider-custom shrink-0 self-center animate-in zoom-in-50 duration-200" />
                   )}
                 </div>
               </Button>
@@ -151,108 +150,103 @@ export function SelectTypeStep({
 
           {/* Section: Templates (Custom only) */}
           {formData.type === 'custom' && (
-            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-              <div className="flex items-center justify-between border-b border-border pb-2">
-                <h3 className="text-lg font-semibold text-foreground">
-                  2. Select a Template{' '}
+            <div className="space-y-3 sm:space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
+              <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
+                <h3 className="text-base sm:text-lg font-semibold text-foreground">
+                  2. {t('addProvider.selectTemplate')}{' '}
                   <span className="text-muted-foreground font-normal text-sm ml-2">
-                    (Optional)
+                    {t('addProvider.optional')}
                   </span>
                 </h3>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 items-start">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 items-start">
                 {/* Empty Template Card */}
                 <Button
                   onClick={onSkipToConfig}
                   variant="ghost"
-                  className="text-left group p-0 rounded-lg border border-dashed border-border bg-card hover:bg-muted transition-all h-full w-full"
-                  style={{ minHeight: '140px' }}
+                  className="text-left group p-0 rounded-xl border border-dashed h-full w-full min-h-36 sm:min-h-40 transition-all duration-200 border-border bg-card hover:bg-muted hover:border-accent/30 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 >
-                  <div className="p-4 flex flex-col gap-3 h-full w-full">
+                  <div className="p-4 sm:p-5 flex flex-col gap-3 sm:gap-4 h-full w-full">
                     <div className="flex items-center justify-between w-full">
-                      <div
-                        className={`w-10 h-10 rounded-md flex items-center justify-center transition-colors bg-muted group-hover:bg-primary/10`}
-                      >
-                        <FilePlus
-                          size={20}
-                          className="text-muted-foreground group-hover:text-primary transition-colors"
-                        />
+                      <div className="size-9 sm:size-10 rounded-lg flex items-center justify-center overflow-hidden transition-all duration-200 group-hover:scale-105 bg-muted group-hover:bg-primary/10">
+                        <FilePlus className="size-4 sm:size-5 text-muted-foreground group-hover:text-primary transition-colors" />
                       </div>
                     </div>
 
-                    <div className="flex-1">
-                      <h4 className="text-body font-semibold text-foreground mb-0.5">
-                        Empty Template
+                    <div className="flex-1 space-y-1">
+                      <h4 className="text-sm font-semibold text-foreground leading-tight truncate">
+                        {t('addProvider.emptyTemplate')}
                       </h4>
-                      <p className="text-caption text-muted-foreground">
-                        Start from scratch
+                      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                        {t('addProvider.startFromScratch')}
                       </p>
                     </div>
                   </div>
                 </Button>
 
-                {quickTemplates.map(template => {
-                  const Icon = template.icon === 'grid' ? Grid3X3 : Layers
-                  const isSelected = formData.selectedTemplate === template.id
+                {quickTemplates.map((template) => {
+                  const Icon = template.icon === 'grid' ? Grid3X3 : Layers;
+                  const isSelected = formData.selectedTemplate === template.id;
+                  const templateName = template.nameKey ? t(template.nameKey) : template.name;
+                  const templateDescription = template.descriptionKey
+                    ? t(template.descriptionKey)
+                    : template.description;
+
                   return (
                     <Button
                       key={template.id}
                       onClick={() => onApplyTemplate(template.id)}
                       variant="ghost"
-                      className={`group p-0 rounded-lg border text-left transition-all h-full w-full ${
+                      className={`group p-0 rounded-xl border text-left h-full w-full min-h-36 sm:min-h-40 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                         isSelected
-                          ? 'border-primary bg-primary/10'
-                          : 'border-border bg-card hover:bg-muted'
+                          ? 'border-primary bg-primary/10 shadow-sm'
+                          : 'border-border bg-card hover:bg-muted hover:border-accent/30 hover:shadow-sm'
                       }`}
-                      style={{ minHeight: '140px' }}
                     >
-                      <div className="p-4 flex flex-col gap-3 h-full w-full">
+                      <div className="p-4 sm:p-5 flex flex-col gap-3 sm:gap-4 h-full w-full">
                         <div className="flex items-center justify-between w-full">
                           <div
-                            className={`w-10 h-10 rounded-md flex items-center justify-center transition-colors overflow-hidden ${
-                              isSelected
-                                ? 'bg-primary/15'
-                                : 'bg-muted group-hover:bg-primary/10'
+                            className={`size-9 sm:size-10 rounded-lg flex items-center justify-center overflow-hidden transition-all duration-200 group-hover:scale-105 ${
+                              isSelected ? 'bg-primary/15' : 'bg-muted group-hover:bg-primary/10'
                             }`}
                           >
                             {template.logoUrl ? (
                               <img
                                 src={template.logoUrl}
-                                alt={template.name}
+                                alt={templateName}
                                 className="w-full h-full object-contain"
                               />
                             ) : (
                               <Icon
-                                size={20}
-                                className={
+                                className={`size-4 sm:size-5 ${
                                   isSelected
                                     ? 'text-primary'
                                     : 'text-muted-foreground group-hover:text-primary transition-colors'
-                                }
+                                }`}
                               />
                             )}
                           </div>
                           {isSelected && (
-                            <CheckCircle2 size={18} className="text-primary" />
+                            <CheckCircle2 className="size-4 sm:size-[18px] text-primary animate-in zoom-in-50 duration-200" />
                           )}
                         </div>
 
-                        <div className="flex-1">
+                        <div className="flex-1 space-y-1">
                           <h4
-                            className={`text-body font-semibold mb-0.5 transition-colors ${
+                            className={`text-sm font-semibold leading-tight truncate transition-colors ${
                               isSelected ? 'text-primary' : 'text-foreground'
                             }`}
                           >
-                            {template.name}
+                            {templateName}
                           </h4>
-                          <p className="text-caption text-muted-foreground">
-                            {template.description}
+                          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                            {templateDescription}
                           </p>
                         </div>
                       </div>
                     </Button>
-                  )
+                  );
                 })}
               </div>
             </div>
@@ -260,5 +254,5 @@ export function SelectTypeStep({
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,20 +1,16 @@
-import { useState } from 'react'
-import { Button } from '@/components/ui'
-import { GitCompare } from 'lucide-react'
-import { DiffModal } from './DiffModal'
+import { useState } from 'react';
+import { Button } from '@/components/ui';
+import { GitCompare } from 'lucide-react';
+import { DiffModal } from './DiffModal';
 
 interface DiffButtonProps {
-  clientContent: string
-  upstreamContent: string
-  title: string
+  clientContent: string;
+  upstreamContent: string;
+  title: string;
 }
 
-export function DiffButton({
-  clientContent,
-  upstreamContent,
-  title,
-}: DiffButtonProps) {
-  const [isOpen, setIsOpen] = useState(false)
+export function DiffButton({ clientContent, upstreamContent, title }: DiffButtonProps) {
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
     <>
@@ -35,5 +31,5 @@ export function DiffButton({
         rightContent={upstreamContent}
       />
     </>
-  )
+  );
 }

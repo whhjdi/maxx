@@ -59,7 +59,7 @@ export function useStreamingRequests(): StreamingState {
     // 订阅请求更新事件 (连接由 main.tsx 统一管理)
     const unsubscribe = transport.subscribe<ProxyRequest>(
       'proxy_request_update',
-      handleRequestUpdate
+      handleRequestUpdate,
     );
 
     // 订阅 WebSocket 重连事件，清空活动请求列表
@@ -132,7 +132,10 @@ export function useProviderStreamingCount(providerId: number): number {
 /**
  * 获取特定 Provider 在特定 ClientType 下的 streaming 请求数
  */
-export function useProviderClientStreamingCount(providerId: number, clientType: ClientType): number {
+export function useProviderClientStreamingCount(
+  providerId: number,
+  clientType: ClientType,
+): number {
   const { countsByProviderAndClient } = useStreamingRequests();
   return countsByProviderAndClient.get(`${providerId}:${clientType}`) || 0;
 }

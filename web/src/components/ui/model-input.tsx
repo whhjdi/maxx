@@ -1,14 +1,9 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
-import { ChevronDown, Search, X } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
-import { cn } from '@/lib/utils'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { ChevronDown, Search, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 
 // 常见模型列表
 const COMMON_MODELS = [
@@ -18,7 +13,11 @@ const COMMON_MODELS = [
   { id: '*opus*', name: 'All Opus models', provider: 'Claude' },
   { id: '*haiku*', name: 'All Haiku models', provider: 'Claude' },
   // Claude models
-  { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4', provider: 'Claude' },
+  {
+    id: 'claude-sonnet-4-20250514',
+    name: 'Claude Sonnet 4',
+    provider: 'Claude',
+  },
   { id: 'claude-opus-4-20250514', name: 'Claude Opus 4', provider: 'Claude' },
   {
     id: 'claude-3-5-sonnet-20241022',
@@ -60,71 +59,103 @@ const COMMON_MODELS = [
   { id: 'o1-pro', name: 'o1 Pro', provider: 'OpenAI' },
   { id: 'o3-mini', name: 'o3 Mini', provider: 'OpenAI' },
   // Antigravity supported target models (use these as mapping targets)
-  { id: 'claude-opus-4-5-thinking', name: 'Claude Opus 4.5 Thinking', provider: 'Antigravity' },
-  { id: 'claude-sonnet-4-5', name: 'Claude Sonnet 4.5', provider: 'Antigravity' },
-  { id: 'claude-sonnet-4-5-thinking', name: 'Claude Sonnet 4.5 Thinking', provider: 'Antigravity' },
-  { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite', provider: 'Antigravity' },
+  {
+    id: 'claude-opus-4-5-thinking',
+    name: 'Claude Opus 4.5 Thinking',
+    provider: 'Antigravity',
+  },
+  {
+    id: 'claude-sonnet-4-5',
+    name: 'Claude Sonnet 4.5',
+    provider: 'Antigravity',
+  },
+  {
+    id: 'claude-sonnet-4-5-thinking',
+    name: 'Claude Sonnet 4.5 Thinking',
+    provider: 'Antigravity',
+  },
+  {
+    id: 'gemini-2.5-flash-lite',
+    name: 'Gemini 2.5 Flash Lite',
+    provider: 'Antigravity',
+  },
   { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'Antigravity' },
-  { id: 'gemini-2.5-flash-thinking', name: 'Gemini 2.5 Flash Thinking', provider: 'Antigravity' },
+  {
+    id: 'gemini-2.5-flash-thinking',
+    name: 'Gemini 2.5 Flash Thinking',
+    provider: 'Antigravity',
+  },
   { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'Antigravity' },
   { id: 'gemini-3-flash', name: 'Gemini 3 Flash', provider: 'Antigravity' },
   { id: 'gemini-3-pro', name: 'Gemini 3 Pro', provider: 'Antigravity' },
   { id: 'gemini-3-pro-low', name: 'Gemini 3 Pro Low', provider: 'Antigravity' },
-  { id: 'gemini-3-pro-high', name: 'Gemini 3 Pro High', provider: 'Antigravity' },
-  { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro Preview', provider: 'Antigravity' },
-  { id: 'gemini-3-pro-image', name: 'Gemini 3 Pro Image', provider: 'Antigravity' },
+  {
+    id: 'gemini-3-pro-high',
+    name: 'Gemini 3 Pro High',
+    provider: 'Antigravity',
+  },
+  {
+    id: 'gemini-3-pro-preview',
+    name: 'Gemini 3 Pro Preview',
+    provider: 'Antigravity',
+  },
+  {
+    id: 'gemini-3-pro-image',
+    name: 'Gemini 3 Pro Image',
+    provider: 'Antigravity',
+  },
   // Generic wildcard
   { id: '*', name: 'All models (catch-all)', provider: 'Other' },
-] as const
+] as const;
 
-type Model = (typeof COMMON_MODELS)[number]
-type Provider = Model['provider']
+type Model = (typeof COMMON_MODELS)[number];
+type Provider = Model['provider'];
 
 interface ModelInputProps {
-  value: string
-  onChange: (value: string) => void
-  placeholder?: string
-  disabled?: boolean
-  className?: string
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
   /** Filter to only show models from specific providers */
-  providers?: Provider[]
+  providers?: Provider[];
 }
 
 // 简单的模糊匹配函数
 function fuzzyMatch(text: string, pattern: string): boolean {
-  const lowerText = text.toLowerCase()
-  const lowerPattern = pattern.toLowerCase()
+  const lowerText = text.toLowerCase();
+  const lowerPattern = pattern.toLowerCase();
 
   // 先尝试普通包含匹配
-  if (lowerText.includes(lowerPattern)) return true
+  if (lowerText.includes(lowerPattern)) return true;
 
   // 模糊匹配：pattern 中的字符按顺序出现在 text 中
-  let patternIdx = 0
+  let patternIdx = 0;
   for (let i = 0; i < lowerText.length && patternIdx < lowerPattern.length; i++) {
     if (lowerText[i] === lowerPattern[patternIdx]) {
-      patternIdx++
+      patternIdx++;
     }
   }
-  return patternIdx === lowerPattern.length
+  return patternIdx === lowerPattern.length;
 }
 
 // 计算匹配分数（用于排序）
 function matchScore(model: Model, pattern: string): number {
-  const lowerPattern = pattern.toLowerCase()
-  const lowerId = model.id.toLowerCase()
-  const lowerName = model.name.toLowerCase()
+  const lowerPattern = pattern.toLowerCase();
+  const lowerId = model.id.toLowerCase();
+  const lowerName = model.name.toLowerCase();
 
   // 精确匹配得分最高
-  if (lowerId === lowerPattern || lowerName === lowerPattern) return 100
+  if (lowerId === lowerPattern || lowerName === lowerPattern) return 100;
 
   // 前缀匹配次之
-  if (lowerId.startsWith(lowerPattern) || lowerName.startsWith(lowerPattern)) return 80
+  if (lowerId.startsWith(lowerPattern) || lowerName.startsWith(lowerPattern)) return 80;
 
   // 包含匹配
-  if (lowerId.includes(lowerPattern) || lowerName.includes(lowerPattern)) return 60
+  if (lowerId.includes(lowerPattern) || lowerName.includes(lowerPattern)) return 60;
 
   // 模糊匹配得分最低
-  return 40
+  return 40;
 }
 
 export function ModelInput({
@@ -135,112 +166,112 @@ export function ModelInput({
   className,
   providers,
 }: ModelInputProps) {
-  const { t } = useTranslation()
-  const actualPlaceholder = placeholder ?? t('modelInput.selectOrEnter')
-  const [isOpen, setIsOpen] = useState(false)
-  const [search, setSearch] = useState('')
-  const [focusedIndex, setFocusedIndex] = useState(-1)
-  const focusedRef = useRef<HTMLButtonElement>(null)
+  const { t } = useTranslation();
+  const actualPlaceholder = placeholder ?? t('modelInput.selectOrEnter');
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  const focusedRef = useRef<HTMLButtonElement>(null);
 
   // Base models filtered by providers prop
   const baseModels = useMemo(() => {
-    if (!providers || providers.length === 0) return [...COMMON_MODELS]
-    return COMMON_MODELS.filter(model => providers.includes(model.provider))
-  }, [providers])
+    if (!providers || providers.length === 0) return [...COMMON_MODELS];
+    return COMMON_MODELS.filter((model) => providers.includes(model.provider));
+  }, [providers]);
 
   // 过滤和排序模型（支持模糊匹配）
   const filteredModels = useMemo(() => {
-    if (!search.trim()) return baseModels
+    if (!search.trim()) return baseModels;
 
     return baseModels
       .filter(
-        model =>
+        (model) =>
           fuzzyMatch(model.id, search) ||
           fuzzyMatch(model.name, search) ||
-          fuzzyMatch(model.provider, search)
+          fuzzyMatch(model.provider, search),
       )
-      .sort((a, b) => matchScore(b, search) - matchScore(a, search))
-  }, [search, baseModels])
+      .sort((a, b) => matchScore(b, search) - matchScore(a, search));
+  }, [search, baseModels]);
 
   // 重置 focusedIndex 当过滤结果变化时
   useEffect(() => {
-    setFocusedIndex(-1)
-  }, [filteredModels.length])
+    setFocusedIndex(-1);
+  }, [filteredModels.length]);
 
   // 自动滚动到高亮项
   useEffect(() => {
     if (focusedIndex >= 0 && focusedRef.current) {
-      focusedRef.current.scrollIntoView({ block: 'nearest' })
+      focusedRef.current.scrollIntoView({ block: 'nearest' });
     }
-  }, [focusedIndex])
+  }, [focusedIndex]);
 
   // 按 provider 分组
   const groupedModels = useMemo(() => {
     return filteredModels.reduce(
       (acc, model) => {
         if (!acc[model.provider]) {
-          acc[model.provider] = []
+          acc[model.provider] = [];
         }
-        acc[model.provider].push(model)
-        return acc
+        acc[model.provider].push(model);
+        return acc;
       },
-      {} as Record<string, Model[]>
-    )
-  }, [filteredModels])
+      {} as Record<string, Model[]>,
+    );
+  }, [filteredModels]);
 
   const handleOpen = () => {
     if (!disabled) {
-      setSearch(value) // 初始化搜索框为当前值
-      setIsOpen(true)
+      setSearch(value); // 初始化搜索框为当前值
+      setIsOpen(true);
     }
-  }
+  };
 
   const handleSelect = (modelId: string) => {
-    onChange(modelId)
-    setIsOpen(false)
-    setSearch('')
-  }
+    onChange(modelId);
+    setIsOpen(false);
+    setSearch('');
+  };
 
   const handleClear = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    onChange('')
-  }
+    e.stopPropagation();
+    onChange('');
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      e.preventDefault()
+      e.preventDefault();
       // 如果有高亮项，选择高亮项；否则使用搜索框内容
       if (focusedIndex >= 0 && focusedIndex < filteredModels.length) {
-        handleSelect(filteredModels[focusedIndex].id)
+        handleSelect(filteredModels[focusedIndex].id);
       } else if (search.trim()) {
-        handleSelect(search.trim())
+        handleSelect(search.trim());
       }
-      return
+      return;
     }
 
     // Tab/Shift+Tab 切换高亮项
     if (e.key === 'Tab' && filteredModels.length > 0) {
-      e.preventDefault()
+      e.preventDefault();
 
       if (e.shiftKey) {
         // Shift+Tab: 上一个
-        setFocusedIndex(prev => (prev <= 0 ? filteredModels.length - 1 : prev - 1))
+        setFocusedIndex((prev) => (prev <= 0 ? filteredModels.length - 1 : prev - 1));
       } else {
         // Tab: 下一个
-        setFocusedIndex(prev => (prev >= filteredModels.length - 1 ? 0 : prev + 1))
+        setFocusedIndex((prev) => (prev >= filteredModels.length - 1 ? 0 : prev + 1));
       }
     }
 
     // 上下箭头也可以切换
     if (e.key === 'ArrowDown' && filteredModels.length > 0) {
-      e.preventDefault()
-      setFocusedIndex(prev => (prev >= filteredModels.length - 1 ? 0 : prev + 1))
+      e.preventDefault();
+      setFocusedIndex((prev) => (prev >= filteredModels.length - 1 ? 0 : prev + 1));
     }
     if (e.key === 'ArrowUp' && filteredModels.length > 0) {
-      e.preventDefault()
-      setFocusedIndex(prev => (prev <= 0 ? filteredModels.length - 1 : prev - 1))
+      e.preventDefault();
+      setFocusedIndex((prev) => (prev <= 0 ? filteredModels.length - 1 : prev - 1));
     }
-  }
+  };
 
   return (
     <>
@@ -256,14 +287,11 @@ export function ModelInput({
           'hover:border-border-hover focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary',
           'disabled:opacity-50 disabled:cursor-not-allowed',
           'transition-colors',
-          className
+          className,
         )}
       >
         <span
-          className={cn(
-            'flex-1 truncate',
-            value ? 'text-foreground' : 'text-muted-foreground'
-          )}
+          className={cn('flex-1 truncate', value ? 'text-foreground' : 'text-muted-foreground')}
         >
           {value || actualPlaceholder}
         </span>
@@ -273,10 +301,7 @@ export function ModelInput({
               role="button"
               tabIndex={0}
               onClick={handleClear}
-              onKeyDown={e =>
-                e.key === 'Enter' &&
-                handleClear(e as unknown as React.MouseEvent)
-              }
+              onKeyDown={(e) => e.key === 'Enter' && handleClear(e as unknown as React.MouseEvent)}
               className="p-0.5 hover:bg-accent rounded text-muted-foreground hover:text-foreground"
             >
               <X size={14} />
@@ -302,7 +327,7 @@ export function ModelInput({
             <Input
               type="text"
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={t('modelInput.searchOrEnter')}
               className="pl-9"
@@ -320,9 +345,9 @@ export function ModelInput({
                       {provider}
                     </div>
                     <div className="space-y-1">
-                      {models.map(model => {
-                        const modelIndex = filteredModels.findIndex(m => m.id === model.id)
-                        const isFocused = modelIndex === focusedIndex
+                      {models.map((model) => {
+                        const modelIndex = filteredModels.findIndex((m) => m.id === model.id);
+                        const isFocused = modelIndex === focusedIndex;
                         return (
                           <button
                             key={model.id}
@@ -334,17 +359,15 @@ export function ModelInput({
                               'hover:bg-accent transition-colors',
                               'flex flex-col gap-0.5',
                               value === model.id && 'bg-primary/10 ring-1 ring-primary/20',
-                              isFocused && 'bg-accent ring-1 ring-primary/40'
+                              isFocused && 'bg-accent ring-1 ring-primary/40',
                             )}
                           >
-                            <span className="text-foreground font-medium">
-                              {model.name}
-                            </span>
+                            <span className="text-foreground font-medium">{model.name}</span>
                             <span className="text-xs text-muted-foreground font-mono">
                               {model.id}
                             </span>
                           </button>
-                        )
+                        );
                       })}
                     </div>
                   </div>
@@ -384,5 +407,5 @@ export function ModelInput({
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }

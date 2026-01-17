@@ -51,7 +51,10 @@ export interface Provider {
 }
 
 // supportedClientTypes 可选，后端会根据 provider type 自动设置
-export type CreateProviderData = Omit<Provider, 'id' | 'createdAt' | 'updatedAt' | 'supportedClientTypes'> & {
+export type CreateProviderData = Omit<
+  Provider,
+  'id' | 'createdAt' | 'updatedAt' | 'supportedClientTypes'
+> & {
   supportedClientTypes?: ClientType[];
 };
 
@@ -154,7 +157,13 @@ export interface ResponseInfo {
   body: string;
 }
 
-export type ProxyRequestStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'CANCELLED' | 'REJECTED';
+export type ProxyRequestStatus =
+  | 'PENDING'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'CANCELLED'
+  | 'REJECTED';
 
 export interface ProxyRequest {
   id: number;
@@ -194,7 +203,12 @@ export interface ProxyRequest {
 
 // ===== ProxyUpstreamAttempt =====
 
-export type ProxyUpstreamAttemptStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+export type ProxyUpstreamAttemptStatus =
+  | 'PENDING'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'CANCELLED';
 
 export interface ProxyUpstreamAttempt {
   id: number;
@@ -207,8 +221,8 @@ export interface ProxyUpstreamAttempt {
   proxyRequestID: number;
   isStream: boolean; // 是否为 SSE 流式请求
   // 模型信息
-  requestModel: string;  // 客户端请求的原始模型
-  mappedModel: string;   // 映射后实际发送的模型
+  requestModel: string; // 客户端请求的原始模型
+  mappedModel: string; // 映射后实际发送的模型
   responseModel: string; // 上游响应中返回的模型名称
   requestInfo: RequestInfo | null;
   responseInfo: ResponseInfo | null;
@@ -338,7 +352,7 @@ export interface AntigravityBatchValidationResult {
 }
 
 export interface AntigravityOAuthResult {
-  state: string;        // 用于前端匹配会话
+  state: string; // 用于前端匹配会话
   success: boolean;
   accessToken?: string;
   refreshToken?: string;
@@ -356,17 +370,17 @@ export interface ModelMapping {
   id: number;
   createdAt: string;
   updatedAt: string;
-  clientType: string;    // 客户端类型，空表示所有
-  providerType: string;  // 供应商类型（如 antigravity, kiro, custom），空表示所有
-  providerID: number;    // 供应商 ID，0 表示所有
-  projectID: number;     // 项目 ID，0 表示所有
-  routeID: number;       // 路由 ID，0 表示所有
-  apiTokenID: number;    // Token ID，0 表示所有
-  pattern: string;       // 源模式，支持 * 通配符
-  target: string;        // 目标模型名
-  priority: number;      // 优先级，数字越小优先级越高
-  isEnabled: boolean;    // 是否启用
-  isBuiltin: boolean;    // 是否为内置规则
+  clientType: string; // 客户端类型，空表示所有
+  providerType: string; // 供应商类型（如 antigravity, kiro, custom），空表示所有
+  providerID: number; // 供应商 ID，0 表示所有
+  projectID: number; // 项目 ID，0 表示所有
+  routeID: number; // 路由 ID，0 表示所有
+  apiTokenID: number; // Token ID，0 表示所有
+  pattern: string; // 源模式，支持 * 通配符
+  target: string; // 目标模型名
+  priority: number; // 优先级，数字越小优先级越高
+  isEnabled: boolean; // 是否启用
+  isBuiltin: boolean; // 是否为内置规则
 }
 
 // 创建/更新模型映射的请求
@@ -402,9 +416,9 @@ export interface KiroTokenValidationResult {
 }
 
 export interface KiroQuotaData {
-  total_limit: number;      // 总额度（包括基础+免费试用）
-  available: number;        // 可用额度
-  used: number;             // 已使用额度
+  total_limit: number; // 总额度（包括基础+免费试用）
+  available: number; // 可用额度
+  used: number; // 已使用额度
   days_until_reset: number;
   subscription_type: string;
   free_trial_status?: string;

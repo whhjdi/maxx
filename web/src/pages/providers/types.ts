@@ -79,6 +79,8 @@ export type QuickTemplate = {
   id: string;
   name: string;
   description: string;
+  nameKey?: string; // i18n translation key for name
+  descriptionKey?: string; // i18n translation key for description
   icon: 'grid' | 'layers';
   logoUrl?: string; // 可选的 logo 图片 URL
   supportedClients: ClientType[];
@@ -90,6 +92,8 @@ export const quickTemplates: QuickTemplate[] = [
     id: '88code',
     name: '88 Code',
     description: 'Claude + Codex + Gemini',
+    nameKey: 'addProvider.templates.88code.name',
+    descriptionKey: 'addProvider.templates.88code.description',
     icon: 'grid',
     supportedClients: ['claude', 'codex', 'gemini'],
     clientBaseURLs: {
@@ -102,6 +106,8 @@ export const quickTemplates: QuickTemplate[] = [
     id: 'aicodemirror',
     name: 'AI Code Mirror',
     description: 'Claude + Codex + Gemini',
+    nameKey: 'addProvider.templates.aicodemirror.name',
+    descriptionKey: 'addProvider.templates.aicodemirror.description',
     icon: 'layers',
     supportedClients: ['claude', 'codex', 'gemini'],
     clientBaseURLs: {
@@ -114,6 +120,8 @@ export const quickTemplates: QuickTemplate[] = [
     id: 'duckcoding',
     name: 'DuckCoding',
     description: 'Claude + Codex + Gemini',
+    nameKey: 'addProvider.templates.duckcoding.name',
+    descriptionKey: 'addProvider.templates.duckcoding.description',
     icon: 'grid',
     logoUrl: duckcodingLogo,
     supportedClients: ['claude', 'codex', 'gemini'],
@@ -127,6 +135,8 @@ export const quickTemplates: QuickTemplate[] = [
     id: 'freeduck',
     name: 'Free Duck',
     description: '免费站点 · 只有 Claude Code',
+    nameKey: 'addProvider.templates.freeduck.name',
+    descriptionKey: 'addProvider.templates.freeduck.description',
     icon: 'grid',
     logoUrl: freeDuckLogo,
     supportedClients: ['claude'],

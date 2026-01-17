@@ -149,7 +149,7 @@ export function useTransport(): TransportContextValue {
   if (!context) {
     throw new Error(
       '[useTransport] Must be used within a TransportProvider. ' +
-        'Wrap your app with <TransportProvider> first.'
+        'Wrap your app with <TransportProvider> first.',
     );
   }
 
@@ -164,4 +164,3 @@ export function useTransport(): TransportContextValue {
 export function useTransportType(): TransportType {
   return useTransport().type;
 }
-
