@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BarChart3 } from 'lucide-react';
+import { subHours, subDays, format, parseISO, isValid } from 'date-fns';
 import { PageHeader } from '@/components/layout/page-header';
 import {
   Card,
@@ -38,24 +39,29 @@ function getTimeRange(range: TimeRange): { start: string; end: string } {
 
   switch (range) {
     case '24h':
-      start = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      start = subHours(now, 24);
       break;
     case '7d':
-      start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      start = subDays(now, 7);
       break;
     case '30d':
-      start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      start = subDays(now, 30);
+      break;
+    default:
+      start = subDays(now, 7); // 默认 7 天
       break;
   }
 
   return { start: start.toISOString(), end };
 }
 
-// 按小时聚合数据用于图表
+// 按时间范围聚合数据用于图表
 function aggregateByHour(stats: UsageStats[] | undefined, timeRange: TimeRange) {
-  if (!stats || stats.length === 0) return [];
-
-  const hourMap = new Map<string, {
+  // 生成完整的时间序列
+  const now = new Date();
+  const isHourly = timeRange === '24h';
+  const pointsToShow = timeRange === '24h' ? 24 : timeRange === '7d' ? 7 : 30;
+  const timeMap = new Map<string, {
     hour: string;
     successful: number;
     failed: number;
@@ -66,10 +72,30 @@ function aggregateByHour(stats: UsageStats[] | undefined, timeRange: TimeRange) 
     cost: number;
   }>();
 
-  stats.forEach((s) => {
-    const hourKey = s.hour.slice(0, 13); // YYYY-MM-DDTHH
-    const existing = hourMap.get(hourKey) || {
-      hour: hourKey,
+  // 生成时间键的辅助函数（使用本地时间）
+  const getTimeKey = (date: Date, hourly: boolean): string => {
+    if (hourly) {
+      return format(date, 'yyyy-MM-dd HH');
+    } else {
+      return format(date, 'yyyy-MM-dd');
+    }
+  };
+
+  // 填充完整的时间序列
+  for (let i = pointsToShow - 1; i >= 0; i--) {
+    let date: Date;
+
+    if (isHourly) {
+      // 24h: 按小时
+      date = subHours(now, i);
+    } else {
+      // 7d/30d: 按天
+      date = subDays(now, i);
+    }
+
+    const timeKey = getTimeKey(date, isHourly);
+    timeMap.set(timeKey, {
+      hour: timeKey,
       successful: 0,
       failed: 0,
       inputTokens: 0,
@@ -77,43 +103,98 @@ function aggregateByHour(stats: UsageStats[] | undefined, timeRange: TimeRange) 
       cacheRead: 0,
       cacheWrite: 0,
       cost: 0,
-    };
-    existing.successful += s.successfulRequests;
-    existing.failed += s.failedRequests;
-    existing.inputTokens += s.inputTokens;
-    existing.outputTokens += s.outputTokens;
-    existing.cacheRead += s.cacheRead;
-    existing.cacheWrite += s.cacheWrite;
-    existing.cost += s.cost;
-    hourMap.set(hourKey, existing);
-  });
+    });
+  }
+
+  // 填充实际数据
+  if (stats && stats.length > 0) {
+    stats.forEach((s) => {
+      if (!s || !s.hour) return; // 跳过无效数据
+
+      // 解析后端返回的时间（可能带时区）
+      const date = parseISO(s.hour);
+      if (!isValid(date)) return; // 跳过无效日期
+
+      const timeKey = getTimeKey(date, isHourly);
+      const existing = timeMap.get(timeKey);
+      if (existing) {
+        existing.successful += s.successfulRequests || 0;
+        existing.failed += s.failedRequests || 0;
+        existing.inputTokens += s.inputTokens || 0;
+        existing.outputTokens += s.outputTokens || 0;
+        existing.cacheRead += s.cacheRead || 0;
+        existing.cacheWrite += s.cacheWrite || 0;
+        existing.cost += s.cost || 0;
+      }
+    });
+  }
 
   // 排序并格式化
-  return Array.from(hourMap.values())
-    .sort((a, b) => a.hour.localeCompare(b.hour))
+  return Array.from(timeMap.values())
+    .sort((a, b) => (a.hour || '').localeCompare(b.hour || ''))
     .map((item) => ({
       ...item,
       hour: formatHourLabel(item.hour, timeRange),
       // 转换 cost 从微美元到美元
-      cost: item.cost / 1000000,
+      cost: (item.cost || 0) / 1000000,
     }));
 }
 
 function formatHourLabel(hour: string, timeRange: TimeRange): string {
-  // hour 格式是 YYYY-MM-DDTHH，需要补全为有效的 ISO 格式
-  const date = new Date(hour + ':00:00');
-  if (timeRange === '24h') {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (!hour) return '';
+
+  try {
+    if (timeRange === '24h') {
+      // 24h: 显示时间 "14:00"
+      // hour 格式是 "yyyy-MM-dd HH"
+      const date = parseISO(hour.replace(' ', 'T') + ':00:00');
+      return isValid(date) ? format(date, 'HH:mm') : '';
+    } else {
+      // 7d/30d: 显示日期 "1/17"
+      const date = parseISO(hour);
+      if (!isValid(date)) return '';
+      return `${date.getMonth() + 1}/${date.getDate()}`;
+    }
+  } catch {
+    return '';
   }
-  // 7d/30d 显示日期+小时
-  return date.toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit' });
+}
+
+// 智能单位格式化函数
+function formatNumber(value: number): string {
+  if (value === null || value === undefined || isNaN(value)) return '0';
+
+  const absValue = Math.abs(value);
+
+  if (absValue >= 1000000) {
+    // >= 1M
+    const formatted = value / 1000000;
+    return absValue >= 10000000
+      ? `${Math.round(formatted)}M`  // >= 10M: 不显示小数
+      : `${formatted.toFixed(1)}M`;   // < 10M: 显示 1 位小数
+  } else if (absValue >= 1000) {
+    // >= 1K
+    const formatted = value / 1000;
+    return absValue >= 10000
+      ? `${Math.round(formatted)}K`   // >= 10K: 不显示小数
+      : `${formatted.toFixed(1)}K`;    // < 10K: 显示 1 位小数
+  } else {
+    // < 1K: 显示原数字
+    return Math.round(value).toString();
+  }
+}
+
+// Cost 格式化函数（添加 $ 符号）
+function formatCost(value: number): string {
+  if (value === null || value === undefined || isNaN(value)) return '$0';
+  return `$${formatNumber(value)}`;
 }
 
 type ChartView = 'requests' | 'tokens' | 'cost';
 
 export function StatsPage() {
   const { t } = useTranslation();
-  const [timeRange, setTimeRange] = useState<TimeRange>('7d');
+  const [timeRange, setTimeRange] = useState<TimeRange>('24h');
   const [providerId, setProviderId] = useState<string>('all');
   const [projectId, setProjectId] = useState<string>('all');
   const [clientType, setClientType] = useState<string>('all');
@@ -146,7 +227,7 @@ export function StatsPage() {
         description={t('stats.description')}
       />
 
-      <div className="flex-1 overflow-auto p-6 space-y-6">
+      <div className="flex-1 overflow-auto p-6 flex flex-col gap-6">
         {/* 过滤器 */}
         <div className="flex flex-wrap items-center gap-4">
           <FilterSelect
@@ -209,8 +290,8 @@ export function StatsPage() {
             {t('common.noData')}
           </div>
         ) : (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+          <Card className="flex flex-col flex-1 min-h-0">
+            <CardHeader className="flex flex-row items-center justify-between flex-shrink-0">
               <CardTitle>{t('stats.chart')}</CardTitle>
               <Tabs value={chartView} onValueChange={(v) => setChartView(v as ChartView)}>
                 <TabsList>
@@ -220,31 +301,31 @@ export function StatsPage() {
                 </TabsList>
               </Tabs>
             </CardHeader>
-            <CardContent>
-              <div className="h-80">
+            <CardContent className="flex-1 min-h-0 overflow-x-auto">
+              <div style={{ minWidth: `${Math.max(chartData.length * 60, 600)}px`, height: '100%' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis dataKey="hour" className="text-xs" />
-                    <YAxis className="text-xs" />
-                    <Tooltip />
+                    <YAxis className="text-xs" tickFormatter={chartView === 'cost' ? formatCost : formatNumber} />
+                    <Tooltip formatter={(value) => chartView === 'cost' ? formatCost(value as number) : formatNumber(value as number)} />
                     <Legend />
                     {chartView === 'requests' && (
                       <>
-                        <Bar dataKey="successful" name={t('stats.successful')} stackId="a" fill="#22c55e" />
-                        <Bar dataKey="failed" name={t('stats.failed')} stackId="a" fill="#ef4444" />
+                        <Bar dataKey="successful" name={t('stats.successful')} stackId="a" fill="#22c55e" barSize={40} />
+                        <Bar dataKey="failed" name={t('stats.failed')} stackId="a" fill="#ef4444" barSize={40} />
                       </>
                     )}
                     {chartView === 'tokens' && (
                       <>
-                        <Bar dataKey="inputTokens" name={t('stats.inputTokens')} stackId="a" fill="#3b82f6" />
-                        <Bar dataKey="outputTokens" name={t('stats.outputTokens')} stackId="a" fill="#8b5cf6" />
-                        <Bar dataKey="cacheRead" name={t('stats.cacheRead')} stackId="a" fill="#22c55e" />
-                        <Bar dataKey="cacheWrite" name={t('stats.cacheWrite')} stackId="a" fill="#f59e0b" />
+                        <Bar dataKey="inputTokens" name={t('stats.inputTokens')} stackId="a" fill="#3b82f6" barSize={40} />
+                        <Bar dataKey="outputTokens" name={t('stats.outputTokens')} stackId="a" fill="#8b5cf6" barSize={40} />
+                        <Bar dataKey="cacheRead" name={t('stats.cacheRead')} stackId="a" fill="#22c55e" barSize={40} />
+                        <Bar dataKey="cacheWrite" name={t('stats.cacheWrite')} stackId="a" fill="#f59e0b" barSize={40} />
                       </>
                     )}
                     {chartView === 'cost' && (
-                      <Bar dataKey="cost" name={t('stats.costUSD')} fill="#10b981" />
+                      <Bar dataKey="cost" name={t('stats.costUSD')} fill="#10b981" barSize={40} />
                     )}
                   </BarChart>
                 </ResponsiveContainer>
