@@ -494,7 +494,7 @@ export function StatsPage() {
           <div className="text-center text-muted-foreground py-8">{t('common.noData')}</div>
         ) : (
           <Card className="flex flex-col flex-1 min-h-0">
-            <CardHeader className="flex flex-row items-center justify-between flex-shrink-0">
+            <CardHeader className="flex flex-row items-center justify-between shrink-0">
               <CardTitle>{t('stats.chart')}</CardTitle>
               <Tabs value={chartView} onValueChange={(v) => setChartView(v as ChartView)}>
                 <TabsList>
