@@ -1,5 +1,5 @@
 import { GripVertical, Zap, RefreshCw, Activity, Snowflake, Info } from 'lucide-react';
-import { Button, Switch } from '@/components/ui';
+import { Switch } from '@/components/ui';
 import { StreamingBadge } from '@/components/ui/streaming-badge';
 import { MarqueeBackground } from '@/components/ui/marquee-background';
 import { useSortable } from '@dnd-kit/sortable';
@@ -290,9 +290,16 @@ export function ProviderRowContent({
   };
 
   return (
-    <Button
-      variant={null}
+    <div
+      role="button"
+      tabIndex={0}
       onClick={handleContentClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleContentClick(e as any);
+        }
+      }}
       className={cn(
         'group relative flex items-center gap-4 p-3 rounded-xl border transition-all duration-300 overflow-hidden w-full h-auto cursor-pointer active:cursor-grab',
         effectiveIsInCooldown
@@ -589,6 +596,6 @@ export function ProviderRowContent({
       >
         <Switch checked={enabled} onCheckedChange={onToggle} disabled={isToggling} />
       </div>
-    </Button>
+    </div>
   );
 }
